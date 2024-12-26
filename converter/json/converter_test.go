@@ -2,9 +2,11 @@ package json
 
 import (
 	"testing"
+
+	"github.com/theobori/nix-converter/internal/common"
 )
 
-var toNixData = []string{
+var jsonStrings = []string{
 	`{
   "globalOperations": {
     "regions": {
@@ -39,7 +41,11 @@ var toNixData = []string{
                       "transportation": {
                         "public": {
                           "subway": {
-                            "lines": ["red", "blue", "green"],
+                            "lines": [
+                              "red",
+                              "blue",
+                              "green"
+                            ],
                             "stations": 45,
                             "dailyRidership": 157980,
                             "maintenance": {
@@ -88,7 +94,11 @@ var toNixData = []string{
                                               "position": "Managing Partner",
                                               "experience": {
                                                 "years": 15,
-                                                "expertise": ["AI", "SaaS", "Fintech"],
+                                                "expertise": [
+                                                  "AI",
+                                                  "SaaS",
+                                                  "Fintech"
+                                                ],
                                                 "previous": {
                                                   "companies": [
                                                     {
@@ -172,16 +182,63 @@ var toNixData = []string{
     }
   }
 }`,
-	`{"hello": "world"}`,
+}
+
+var nixStrings = []string{
+	`{
+  id = "c7d8e9f0";
+  users = [
+    {
+      name = "Alice";
+      age = 28;
+      pets = [
+        {
+          type = "cat";
+          name = "Luna";
+          toys = [
+            "mouse"
+            "ball"
+          ];
+        }
+        {
+          type = "dog";
+          name = "Max";
+        }
+      ];
+    }
+    {
+      name = "Bob";
+      age = 34;
+      pets = null;
+    }
+  ];
+  settings = {
+    theme = {
+      dark = {
+        primary = "#1a1a1a";
+        accent = "#4287f5";
+      };
+      light = {
+        primary = "#ffffff";
+        accent = "#2196f3";
+      };
+    };
+    notifications = true;
+  };
+  meta = {
+    created = "2024-01-01";
+    modified = {
+      by = "system";
+      timestamp = "2024-02-15T14:30:00Z";
+    };
+  };
+}`,
 }
 
 func TestJSONToNix(t *testing.T) {
-	for _, s := range toNixData {
-		nj := NewNixJson(s)
+	common.TestToNixStrings(t, jsonStrings, FromNix, ToNix)
+}
 
-		_, err := nj.ToNix()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+func TestJSONFromNix(t *testing.T) {
+	common.TestFromNixStrings(t, nixStrings, FromNix, ToNix)
 }

@@ -21,11 +21,17 @@
 go.work
 go.work.sum
 
-# env file
+# Env file
 .env
 
 result
 .direnv
 
-data2nix
+nix-converter
 *.json
+
+# Just some test files
+b.nix
+c.nix
+d.nix
+*.yaml
