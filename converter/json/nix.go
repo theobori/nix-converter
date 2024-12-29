@@ -12,32 +12,23 @@ import (
 const IndentSize = 2
 
 type NixVisitor struct {
-	indentLevel int
-	indentValue string
-	p           *parser.Parser
-	node        *parser.Node
+	i    common.Indentation
+	p    *parser.Parser
+	node *parser.Node
 }
 
 func NewNixVisitor(p *parser.Parser, node *parser.Node) *NixVisitor {
 	return &NixVisitor{
-		indentLevel: 0,
-		node:        node,
-		p:           p,
+		i:    *common.NewDefaultIndentation(),
+		node: node,
+		p:    p,
 	}
-}
-
-func (fn *NixVisitor) indent() {
-	fn.indentValue, fn.indentLevel = common.Indent(fn.indentLevel, IndentSize)
-}
-
-func (fn *NixVisitor) unIndent() {
-	fn.indentValue, fn.indentLevel = common.UnIndent(fn.indentLevel, IndentSize)
 }
 
 func (fn *NixVisitor) visitSet(node *parser.Node) (string, error) {
 	e := []string{}
 	for _, child := range node.Nodes {
-		fn.indent()
+		fn.i.Indent()
 		key, err := fn.visit(child.Nodes[0])
 		if err != nil {
 			return "", err
@@ -48,27 +39,27 @@ func (fn *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
-		e = append(e, fn.indentValue+"\""+key+"\""+": "+value)
-		fn.unIndent()
+		e = append(e, fn.i.IndentValue()+"\""+key+"\""+": "+value)
+		fn.i.UnIndent()
 	}
 
-	return "{\n" + strings.Join(e, ",\n") + "\n" + fn.indentValue + "}", nil
+	return "{\n" + strings.Join(e, ",\n") + "\n" + fn.i.IndentValue() + "}", nil
 }
 
 func (fn *NixVisitor) visitList(node *parser.Node) (string, error) {
 	e := []string{}
 	for _, child := range node.Nodes {
-		fn.indent()
+		fn.i.Indent()
 		s, err := fn.visit(child)
 		if err != nil {
 			return "", err
 		}
 
-		e = append(e, fn.indentValue+s)
-		fn.unIndent()
+		e = append(e, fn.i.IndentValue()+s)
+		fn.i.UnIndent()
 	}
 
-	return "[\n" + strings.Join(e, ",\n") + "\n" + fn.indentValue + "]", nil
+	return "[\n" + strings.Join(e, ",\n") + "\n" + fn.i.IndentValue() + "]", nil
 }
 
 func (fn *NixVisitor) visit(node *parser.Node) (string, error) {

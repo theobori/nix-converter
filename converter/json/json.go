@@ -3,29 +3,20 @@ package json
 import (
 	"strings"
 
-	"github.com/theobori/nix-converter/converter/nix"
 	"github.com/theobori/nix-converter/internal/common"
 	"github.com/valyala/fastjson"
 )
 
 type JSONVisitor struct {
-	indentLevel int
-	indentValue string
-	value       *fastjson.Value
+	i     common.Indentation
+	value *fastjson.Value
 }
 
 func NewJSONVisitor(value *fastjson.Value) *JSONVisitor {
 	return &JSONVisitor{
+		i:     *common.NewDefaultIndentation(),
 		value: value,
 	}
-}
-
-func (tn *JSONVisitor) indent() {
-	tn.indentValue, tn.indentLevel = common.Indent(tn.indentLevel, nix.IndentSize)
-}
-
-func (tn *JSONVisitor) unIndent() {
-	tn.indentValue, tn.indentLevel = common.UnIndent(tn.indentLevel, nix.IndentSize)
 }
 
 func (tn *JSONVisitor) visitObject(value *fastjson.Value) string {
@@ -33,12 +24,12 @@ func (tn *JSONVisitor) visitObject(value *fastjson.Value) string {
 
 	e := []string{}
 	o.Visit(func(key []byte, v *fastjson.Value) {
-		tn.indent()
-		e = append(e, tn.indentValue+string(key)+" = "+tn.visit(v)+";")
-		tn.unIndent()
+		tn.i.Indent()
+		e = append(e, tn.i.IndentValue()+string(key)+" = "+tn.visit(v)+";")
+		tn.i.UnIndent()
 	})
 
-	return "{\n" + strings.Join(e, "\n") + "\n" + tn.indentValue + "}"
+	return "{\n" + strings.Join(e, "\n") + "\n" + tn.i.IndentValue() + "}"
 }
 
 func (tn *JSONVisitor) visitArray(value *fastjson.Value) string {
@@ -46,12 +37,12 @@ func (tn *JSONVisitor) visitArray(value *fastjson.Value) string {
 
 	e := []string{}
 	for _, item := range arr {
-		tn.indent()
-		e = append(e, tn.indentValue+tn.visit(item))
-		tn.unIndent()
+		tn.i.Indent()
+		e = append(e, tn.i.IndentValue()+tn.visit(item))
+		tn.i.UnIndent()
 	}
 
-	return "[\n" + strings.Join(e, "\n") + "\n" + tn.indentValue + "]"
+	return "[\n" + strings.Join(e, "\n") + "\n" + tn.i.IndentValue() + "]"
 }
 
 func (tn *JSONVisitor) visitString(value *fastjson.Value) string {

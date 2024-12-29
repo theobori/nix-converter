@@ -1,31 +1,23 @@
 package yaml
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/theobori/nix-converter/converter/nix"
 	"github.com/theobori/nix-converter/internal/common"
 	"gopkg.in/yaml.v3"
 )
 
 type YAMLVisitor struct {
-	indentLevel int
-	indentValue string
-	node        *yaml.Node
+	i    common.Indentation
+	node *yaml.Node
 }
 
 func NewYAMLVisitor(node *yaml.Node) *YAMLVisitor {
 	return &YAMLVisitor{
+		i:    *common.NewDefaultIndentation(),
 		node: node,
 	}
-}
-
-func (y *YAMLVisitor) indent() {
-	y.indentValue, y.indentLevel = common.Indent(y.indentLevel, nix.IndentSize)
-}
-
-func (y *YAMLVisitor) unIndent() {
-	y.indentValue, y.indentLevel = common.UnIndent(y.indentLevel, nix.IndentSize)
 }
 
 func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
@@ -34,23 +26,23 @@ func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
 		key := node.Content[i].Value
 		value := node.Content[i+1]
 
-		y.indent()
-		e = append(e, y.indentValue+key+" = "+y.visit(value)+";")
-		y.unIndent()
+		y.i.Indent()
+		e = append(e, y.i.IndentValue()+key+" = "+y.visit(value)+";")
+		y.i.UnIndent()
 	}
 
-	return "{\n" + strings.Join(e, "\n") + "\n" + y.indentValue + "}"
+	return "{\n" + strings.Join(e, "\n") + "\n" + y.i.IndentValue() + "}"
 }
 
 func (y *YAMLVisitor) visitSequence(node *yaml.Node) string {
 	e := []string{}
 	for _, item := range node.Content {
-		y.indent()
-		e = append(e, y.indentValue+y.visit(item))
-		y.unIndent()
+		y.i.Indent()
+		e = append(e, y.i.IndentValue()+y.visit(item))
+		y.i.UnIndent()
 	}
 
-	return "[\n" + strings.Join(e, "\n") + "\n" + y.indentValue + "]"
+	return "[\n" + strings.Join(e, "\n") + "\n" + y.i.IndentValue() + "]"
 }
 
 func (y *YAMLVisitor) visitScalar(node *yaml.Node) string {
@@ -84,6 +76,10 @@ func ToNix(data string) (string, error) {
 	err := yaml.Unmarshal([]byte(data), &node)
 	if err != nil {
 		return "", err
+	}
+
+	if len(node.Content) == 0 {
+		return "", fmt.Errorf("empty node")
 	}
 
 	out := NewYAMLVisitor(node.Content[0]).Eval()

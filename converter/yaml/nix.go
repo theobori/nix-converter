@@ -22,26 +22,17 @@ func isYAMLString(s string) bool {
 }
 
 type NixVisitor struct {
-	indentLevel int
-	indentValue string
-	p           *parser.Parser
-	node        *parser.Node
+	i    common.Indentation
+	p    *parser.Parser
+	node *parser.Node
 }
 
 func NewNixVisitor(p *parser.Parser, node *parser.Node) *NixVisitor {
 	return &NixVisitor{
-		indentLevel: 0,
-		node:        node,
-		p:           p,
+		i:    *common.NewDefaultIndentation(),
+		node: node,
+		p:    p,
 	}
-}
-
-func (n *NixVisitor) indent() {
-	n.indentValue, n.indentLevel = common.Indent(n.indentLevel, YAMLIndentSize)
-}
-
-func (n *NixVisitor) unIndent() {
-	n.indentValue, n.indentLevel = common.UnIndent(n.indentLevel, YAMLIndentSize)
 }
 
 func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
@@ -57,7 +48,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 		}
 
 		valueNode := child.Nodes[1]
-		keyString := n.indentValue + key + ": "
+		keyString := n.i.IndentValue() + key + ": "
 
 		switch valueNode.Type {
 		case parser.SetNode, parser.ListNode:
@@ -70,12 +61,12 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			} else {
 				e = append(e, keyString)
 
-				n.indent()
+				n.i.Indent()
 				value, err := n.visit(valueNode)
 				if err != nil {
 					return "", err
 				}
-				n.unIndent()
+				n.i.UnIndent()
 
 				e = append(e, value)
 			}
@@ -98,16 +89,16 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 
 	e := []string{}
 	for _, child := range node.Nodes {
-		n.indent()
+		n.i.Indent()
 
 		s, err := n.visit(child)
 		if err != nil {
 			return "", err
 		}
 
-		n.unIndent()
+		n.i.UnIndent()
 
-		e = append(e, n.indentValue+"- "+strings.TrimLeft(s, " "))
+		e = append(e, n.i.IndentValue()+"- "+strings.TrimLeft(s, " "))
 	}
 
 	return strings.Join(e, "\n"), nil

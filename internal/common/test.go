@@ -7,19 +7,19 @@ import (
 type ConvertFn func(string) (string, error)
 
 func TestFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
-	// Convert to JSON
+	// Convert to data
 	nixString, err := fromNix(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Convert back to Nix
-	jsonString, err := toNix(nixString)
+	dataString, err := toNix(nixString)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if jsonString != s {
+	if dataString != s {
 		t.Fatal("not matching the original Nix string")
 	}
 }
@@ -37,19 +37,19 @@ func TestToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
 		t.Fatal(err)
 	}
 
-	// Convert back to JSON
-	jsonString, err := fromNix(nixString)
+	// Convert back to data
+	dataString, err := fromNix(nixString)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if jsonString != s {
-		t.Fatal("not matching the original JSON string")
+	if dataString != s {
+		t.Fatal("not matching the original data string")
 	}
 }
 
-func TestToNixStrings(t *testing.T, jsonStrings []string, fromNix ConvertFn, toNix ConvertFn) {
-	for _, s := range jsonStrings {
+func TestToNixStrings(t *testing.T, dataStrings []string, fromNix ConvertFn, toNix ConvertFn) {
+	for _, s := range dataStrings {
 		TestToNix(t, s, fromNix, toNix)
 	}
 }
