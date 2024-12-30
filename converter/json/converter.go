@@ -10,14 +10,14 @@ func NewJSONConverter(data string) *JSONConverter {
 	}
 }
 
-func (n *JSONConverter) FromNix() (string, error) {
-	return FromNix(n.data)
+func (j *JSONConverter) FromNix() (string, error) {
+	return FromNix(j.data)
 }
 
-func (n *JSONConverter) ToNix() (string, error) {
-	return ToNix(n.data)
+func (j *JSONConverter) ToNix() (string, error) {
+	return ToNix(j.data)
 }
 
-func (y *JSONConverter) Type() string {
+func (j *JSONConverter) Type() string {
 	return "json"
 }

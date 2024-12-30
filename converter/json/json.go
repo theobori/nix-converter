@@ -19,75 +19,75 @@ func NewJSONVisitor(value *fastjson.Value) *JSONVisitor {
 	}
 }
 
-func (tn *JSONVisitor) visitObject(value *fastjson.Value) string {
+func (j *JSONVisitor) visitObject(value *fastjson.Value) string {
 	o, _ := value.Object()
 
 	e := []string{}
 	o.Visit(func(key []byte, v *fastjson.Value) {
-		tn.i.Indent()
-		e = append(e, tn.i.IndentValue()+string(key)+" = "+tn.visit(v)+";")
-		tn.i.UnIndent()
+		j.i.Indent()
+		e = append(e, j.i.IndentValue()+string(key)+" = "+j.visit(v)+";")
+		j.i.UnIndent()
 	})
 
-	return "{\n" + strings.Join(e, "\n") + "\n" + tn.i.IndentValue() + "}"
+	return "{\n" + strings.Join(e, "\n") + "\n" + j.i.IndentValue() + "}"
 }
 
-func (tn *JSONVisitor) visitArray(value *fastjson.Value) string {
+func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 	arr, _ := value.Array()
 
 	e := []string{}
 	for _, item := range arr {
-		tn.i.Indent()
-		e = append(e, tn.i.IndentValue()+tn.visit(item))
-		tn.i.UnIndent()
+		j.i.Indent()
+		e = append(e, j.i.IndentValue()+j.visit(item))
+		j.i.UnIndent()
 	}
 
-	return "[\n" + strings.Join(e, "\n") + "\n" + tn.i.IndentValue() + "]"
+	return "[\n" + strings.Join(e, "\n") + "\n" + j.i.IndentValue() + "]"
 }
 
-func (tn *JSONVisitor) visitString(value *fastjson.Value) string {
+func (j *JSONVisitor) visitString(value *fastjson.Value) string {
 	return value.String()
 }
 
-func (tn *JSONVisitor) visitNumber(value *fastjson.Value) string {
+func (j *JSONVisitor) visitNumber(value *fastjson.Value) string {
 	return value.String()
 }
 
-func (tn *JSONVisitor) visitFalse(_ *fastjson.Value) string {
+func (j *JSONVisitor) visitFalse(_ *fastjson.Value) string {
 	return "false"
 }
 
-func (tn *JSONVisitor) visitTrue(_ *fastjson.Value) string {
+func (j *JSONVisitor) visitTrue(_ *fastjson.Value) string {
 	return "true"
 }
 
-func (tn *JSONVisitor) visitNull(_ *fastjson.Value) string {
+func (j *JSONVisitor) visitNull(_ *fastjson.Value) string {
 	return "null"
 }
 
-func (tn *JSONVisitor) visit(value *fastjson.Value) string {
+func (j *JSONVisitor) visit(value *fastjson.Value) string {
 	switch value.Type() {
 	case fastjson.TypeObject:
-		return tn.visitObject(value)
+		return j.visitObject(value)
 	case fastjson.TypeArray:
-		return tn.visitArray(value)
+		return j.visitArray(value)
 	case fastjson.TypeString:
-		return tn.visitString(value)
+		return j.visitString(value)
 	case fastjson.TypeNumber:
-		return tn.visitNumber(value)
+		return j.visitNumber(value)
 	case fastjson.TypeFalse:
-		return tn.visitFalse(value)
+		return j.visitFalse(value)
 	case fastjson.TypeTrue:
-		return tn.visitTrue(value)
+		return j.visitTrue(value)
 	case fastjson.TypeNull:
-		return tn.visitNull(value)
+		return j.visitNull(value)
 	default:
 		return ""
 	}
 }
 
-func (tn *JSONVisitor) Eval() string {
-	return tn.visit(tn.value)
+func (j *JSONVisitor) Eval() string {
+	return j.visit(j.value)
 }
 
 func ToNix(data string) (string, error) {

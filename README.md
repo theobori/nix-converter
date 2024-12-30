@@ -7,9 +7,10 @@
 This GitHub repository is a toy project in the form of a CLI tool. It allows you to convert a data format, such as JSON, into Nix, and vice versa.
 
 The project is based on various projects that provide a parser. Here are the references.
-- [go-nix](github.com/orivej/go-nix) for the Nix language.
-- [fastjson](github.com/valyala/fastjson) for the JSON language.
-- [yaml.v3](gopkg.in/yaml.v3) for the YAML language.
+- [go-nix](https://github.com/orivej/go-nix) for the Nix language.
+- [fastjson](https://github.com/valyala/fastjson) for the JSON language.
+- [yaml.v3](https://gopkg.in/yaml.v3) for the YAML language.
+- [go-toml](https://github.com/pelletier/go-toml/v2) for the TOML language.
 
 AST traversal for the Nix language remains static; Nix expressions are not evaluated.
 
@@ -17,10 +18,11 @@ AST traversal for the Nix language remains static; Nix expressions are not evalu
 
 The following languages are supported.
 
-| Language | From Nix | To Nix |
+| Language | To Nix | From Nix |
 | - | - | - |
 | JSON | Yes | Yes |
 | YAML | Yes | Yes |
+| TOML | Yes | No |
 
 ## Getting started
 
@@ -38,7 +40,7 @@ Here are a few examples of how to use the tool.
 
 ### From Nix to JSON using the standard input.
 ```bash
-echo -n "{a = [1 2 3];}" | nix-converter --from-nix -m json
+echo -n "{a = [1 2 3];}" | nix-converter --from-nix -l json
 ```
 
 ### From YAML to Nix using a file named `a.yaml`.
@@ -56,12 +58,12 @@ echo -n "{a = [1 2 3];}" | nix-converter --from-nix -m json
 ```
 
 ```bash
-nix-converter -f a.yaml -m yaml
+nix-converter -f a.yaml -l yaml
 ```
 
 It is also possible to use multiple UNIX pipe.
 ```bash
-nix-converter -f a.yaml -m yaml | nix-converter --from-nix -m json
+nix-converter -f a.yaml -l yaml | nix-converter --from-nix -l json
 ```
 
 ### From Nix to YAML using a file named `a.nix`.
@@ -116,7 +118,7 @@ nix-converter -f a.yaml -m yaml | nix-converter --from-nix -m json
 ```
 
 ```bash
-nix-converter --from-nix -f a.nix -m yaml
+nix-converter --from-nix -f a.nix -l yaml
 ```
 
 ## Contribute

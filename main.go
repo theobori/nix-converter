@@ -10,19 +10,22 @@ import (
 
 	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/converter/json"
+	"github.com/theobori/nix-converter/converter/toml"
 	"github.com/theobori/nix-converter/converter/yaml"
 )
 
-func ConverterFromMode(mode string, data string) (*converter.Converter, error) {
+func ConverterFromLanguage(language string, data string) (*converter.Converter, error) {
 	var c converter.Converter
 
-	switch mode {
+	switch language {
 	case "json":
 		c = json.NewJSONConverter(data)
 	case "yaml":
 		c = yaml.NewYAMLConverter(data)
+	case "toml":
+		c = toml.NewTOMLConverter(data)
 	default:
-		return nil, fmt.Errorf("this data format is not implemented")
+		return nil, fmt.Errorf("this configuration language is not implemented")
 	}
 
 	return &c, nil
@@ -31,14 +34,14 @@ func ConverterFromMode(mode string, data string) (*converter.Converter, error) {
 func main() {
 	var (
 		err      error
-		mode     string
+		language string
 		filename string
 		fromNix  bool
 	)
 
-	flag.StringVar(&mode, "mode", "json", "Data format name")
-	flag.StringVar(&mode, "m", "json", "Data format name (shorthand)")
-	mode = strings.ToLower(mode)
+	flag.StringVar(&language, "language", "json", "Configuration language name")
+	flag.StringVar(&language, "l", "json", "Configuration language name (shorthand)")
+	language = strings.ToLower(language)
 
 	flag.StringVar(&filename, "filename", "", "Read input from a file")
 	flag.StringVar(&filename, "f", "", "Read input from a file (shorthand)")
@@ -60,7 +63,7 @@ func main() {
 
 	data := string(bytes)
 
-	c, err := ConverterFromMode(mode, data)
+	c, err := ConverterFromLanguage(language, data)
 	if err != nil {
 		log.Fatalln(err)
 	}

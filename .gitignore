@@ -35,3 +35,4 @@ b.nix
 c.nix
 d.nix
 *.yaml
+*.toml
