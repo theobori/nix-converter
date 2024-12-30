@@ -5,7 +5,7 @@ buildGoModule {
 
   src = ./.;
 
-  vendorHash = "sha256-h6NQcwTI9SPWzgnIrQb5iOnSIPFjw1AJdlgyA+bmXW0=";
+  vendorHash = "sha256-/804lcqgzW+IWKV2XNJxBVWQLHNkONaCFAkL5oaJmbM=";
 
   meta = {
     description = "All-in-one converter from data format (JSON, YAML, etc.) to Nix and vice versa";

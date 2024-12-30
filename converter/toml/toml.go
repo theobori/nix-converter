@@ -11,9 +11,6 @@ import (
 	"github.com/theobori/nix-converter/internal/common"
 )
 
-type TOMLMapKind map[string]any
-type TOMLArray []any
-
 type TOMLVisitor struct {
 	i    common.Indentation
 	node any
