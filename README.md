@@ -10,7 +10,7 @@ The project is based on various projects that provide a parser. Here are the ref
 - [go-nix](https://github.com/orivej/go-nix) for the Nix language.
 - [fastjson](https://github.com/valyala/fastjson) for the JSON language.
 - [yaml.v3](https://gopkg.in/yaml.v3) for the YAML language.
-- [go-toml](https://github.com/pelletier/go-toml/v2) for the TOML language.
+- [go-toml](https://github.com/pelletier/go-toml) for the TOML language.
 
 AST traversal for the Nix language remains static; Nix expressions are not evaluated.
 
