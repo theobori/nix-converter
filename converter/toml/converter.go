@@ -1,7 +1,5 @@
 package toml
 
-import "fmt"
-
 type TOMLConverter struct {
 	data string
 }
@@ -13,7 +11,7 @@ func NewTOMLConverter(data string) *TOMLConverter {
 }
 
 func (t *TOMLConverter) FromNix() (string, error) {
-	return "", fmt.Errorf("not implemented")
+	return FromNix(t.data)
 }
 
 func (t *TOMLConverter) ToNix() (string, error) {

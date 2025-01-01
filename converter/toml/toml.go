@@ -90,7 +90,7 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	}
 }
 
-func (t *TOMLVisitor) Eval() (string, error) {
+func (t *TOMLVisitor) Visit() (string, error) {
 	return t.visit(t.node)
 }
 
@@ -102,5 +102,5 @@ func ToNix(data string) (string, error) {
 		return "", err
 	}
 
-	return NewTOMLVisitor(node).Eval()
+	return NewTOMLVisitor(node).Visit()
 }

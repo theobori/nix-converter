@@ -137,7 +137,7 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	}
 }
 
-func (n *NixVisitor) Eval() (string, error) {
+func (n *NixVisitor) Visit() (string, error) {
 	return n.visit(n.node)
 }
 
@@ -147,7 +147,7 @@ func FromNix(data string) (string, error) {
 		return "", err
 	}
 
-	out, err := NewNixVisitor(p, p.Result).Eval()
+	out, err := NewNixVisitor(p, p.Result).Visit()
 	if err != nil {
 		return "", err
 	}

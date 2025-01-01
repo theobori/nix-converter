@@ -7,10 +7,11 @@
 This GitHub repository is a toy project in the form of a CLI tool. It allows you to convert a data format, such as JSON, into Nix, and vice versa.
 
 The project is based on various projects that provide a parser. Here are the references.
-- [go-nix](https://github.com/orivej/go-nix) for the Nix language.
-- [fastjson](https://github.com/valyala/fastjson) for the JSON language.
-- [yaml.v3](https://gopkg.in/yaml.v3) for the YAML language.
-- [go-toml](https://github.com/pelletier/go-toml) for the TOML language.
+- [go-nix](https://github.com/orivej/go-nix) for parsing the Nix language.
+- [fastjson](https://github.com/valyala/fastjson) for parsing the JSON language.
+- [yaml.v3](https://gopkg.in/yaml.v3) for parsing the YAML language.
+- [pelletier/go-toml](https://github.com/pelletier/go-toml) for parsing the TOML language.
+- [BurntSushi/toml](https://github.com/BurntSushi/toml) providing a TOML marshaller.
 
 AST traversal for the Nix language remains static; Nix expressions are not evaluated.
 
@@ -22,7 +23,7 @@ The following languages are supported.
 | - | - | - |
 | JSON | Yes | Yes |
 | YAML | Yes | Yes |
-| TOML | Yes | No |
+| TOML | Yes (unstable output) | Yes |
 
 ## Getting started
 
@@ -38,12 +39,12 @@ By default, the program reads the standard input.
 
 Here are a few examples of how to use the tool.
 
-### From Nix to JSON using the standard input.
+### From Nix to JSON using the standard input
 ```bash
 echo -n "{a = [1 2 3];}" | nix-converter --from-nix -l json
 ```
 
-### From YAML to Nix using a file named `a.yaml`.
+### From YAML to Nix using a file named `a.yaml`
 ```yaml
 # a.yaml
 - 0
@@ -66,7 +67,7 @@ It is also possible to use multiple UNIX pipe.
 nix-converter -f a.yaml -l yaml | nix-converter --from-nix -l json
 ```
 
-### From Nix to YAML using a file named `a.nix`.
+### From Nix to YAML using a file named `a.nix`
 ```nix
 # a.nix
 {
@@ -119,6 +120,38 @@ nix-converter -f a.yaml -l yaml | nix-converter --from-nix -l json
 
 ```bash
 nix-converter --from-nix -f a.nix -l yaml
+```
+
+### Get a Go value from Nix
+
+```go
+import (
+	"fmt"
+	"log"
+
+	"github.com/theobori/nix-converter/converter/nix"
+)
+
+func main() {
+	nixString := `
+{
+  meta = {
+    created = "2024-01-01";
+    modified = {
+      by = "system";
+      timestamp = "2024-02-15T14:30:00Z";
+    };
+  };
+  id = "1c7d8e9f0";
+}`
+	// Here we should get a Go map, map[string]any
+	v, err := nix.GoValue(nixString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%t\n", v)
+}
 ```
 
 ## Contribute

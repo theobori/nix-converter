@@ -86,7 +86,7 @@ func (j *JSONVisitor) visit(value *fastjson.Value) string {
 	}
 }
 
-func (j *JSONVisitor) Eval() string {
+func (j *JSONVisitor) Visit() string {
 	return j.visit(j.value)
 }
 
@@ -96,7 +96,7 @@ func ToNix(data string) (string, error) {
 		return "", err
 	}
 
-	out := NewJSONVisitor(v).Eval()
+	out := NewJSONVisitor(v).Visit()
 
 	return out, nil
 }

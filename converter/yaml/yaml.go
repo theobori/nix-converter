@@ -66,7 +66,7 @@ func (y *YAMLVisitor) visit(node *yaml.Node) string {
 	}
 }
 
-func (y *YAMLVisitor) Eval() string {
+func (y *YAMLVisitor) Visit() string {
 	return y.visit(y.node)
 }
 
@@ -82,7 +82,7 @@ func ToNix(data string) (string, error) {
 		return "", fmt.Errorf("empty node")
 	}
 
-	out := NewYAMLVisitor(node.Content[0]).Eval()
+	out := NewYAMLVisitor(node.Content[0]).Visit()
 
 	return out, nil
 }

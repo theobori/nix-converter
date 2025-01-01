@@ -70,12 +70,75 @@ ip = "10.0.0.2"
 role = "backend"`,
 }
 
+var nixStrings = []string{
+	`{
+  id = "c7d8e9f0";
+  users = [
+    {
+      name = "Alice";
+      age = 28;
+      pets = [
+        {
+          type = "cat";
+          name = "Luna";
+          toys = [
+            "mouse"
+            "ball"
+          ];
+        }
+        {
+          type = "dog";
+          name = "Max";
+        }
+      ];
+    }
+    {
+      name = "Bob";
+      age = 34;
+      pets = null;
+    }
+  ];
+  settings = {
+    theme = {
+      dark = {
+        primary = "#1a1a1a";
+        accent = "#4287f5";
+      };
+      light = {
+        primary = "#ffffff";
+        accent = "#2196f3";
+      };
+    };
+    notifications = true;
+  };
+  meta = {
+    created = "2024-01-01";
+    modified = {
+      by = "system";
+      timestamp = "2024-02-15T14:30:00Z";
+    };
+  };
+}`,
+}
+
 // Not comparing anything because its using Go maps (unordered)
 func TestTOMLToNix(t *testing.T) {
 	for _, tomlString := range tomlStrings {
 		c := NewTOMLConverter(tomlString)
 
 		_, err := c.ToNix()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// Not comparing anything because its using Go maps (unordered)
+func TestTOMLFromNix(t *testing.T) {
+	for _, nixString := range nixStrings {
+		c := NewTOMLConverter(nixString)
+
+		_, err := c.FromNix()
 		if err != nil {
 			t.Fatal(err)
 		}
