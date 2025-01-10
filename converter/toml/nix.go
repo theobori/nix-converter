@@ -12,7 +12,7 @@ func FromNix(data string) (string, error) {
 		return "", err
 	}
 
-	// Convert from JSON to TOML
+	// Get a TOML representation of the Go value
 	tomlBytes, err := toml.Marshal(v)
 	if err != nil {
 		return "", err
