@@ -126,14 +126,14 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return nix.VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
-	case parser.StringNode:
+	case parser.StringNode, parser.IStringNode:
 		return n.visitString(node)
 	case parser.IntNode:
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:
 		return nix.VisitFloat(n.p, node)
 	default:
-		return "", fmt.Errorf("unauthorized node type: %s", node.Type.String())
+		return "", fmt.Errorf("unsupported node type: %s", node.Type.String())
 	}
 }
 
