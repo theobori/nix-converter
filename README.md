@@ -21,9 +21,11 @@ The following languages are supported.
 
 | Language | To Nix | From Nix |
 | - | - | - |
-| JSON | Yes | Yes |
-| YAML | Yes | Yes |
-| TOML | Yes (unstable output) | Yes |
+| **JSON** | Yes | Yes |
+| **YAML** | Yes | Yes |
+| **TOML** | Yes (unstable output) | Yes |
+
+The YAML evaluation support anchors. They are handled during the YAML to Nix conversion.
 
 ## Getting started
 
@@ -65,6 +67,29 @@ nix-converter -f a.yaml -l yaml
 It is also possible to use multiple UNIX pipe.
 ```bash
 nix-converter -f a.yaml -l yaml | nix-converter --from-nix -l json
+```
+
+### From YAML to Nix with anchor using a file named `anchor.yaml`
+```yaml
+# anchor.yaml
+definitions:
+  steps:
+    - step: &build-test
+        name: Build and test
+        script:
+          - mvn package
+        artifacts:
+          - target/**
+pipelines:
+  branches:
+    develop:
+      - step: *build-test
+    main:
+      - step: *build-test
+```
+
+```bash
+nix-converter -f anchor.yaml -l yaml
 ```
 
 ### From Nix to YAML using a file named `a.nix`

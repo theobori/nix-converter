@@ -9,15 +9,23 @@ import (
 )
 
 type YAMLVisitor struct {
-	i    common.Indentation
-	node *yaml.Node
+	anchors map[string]string
+	i       common.Indentation
+	node    *yaml.Node
 }
 
 func NewYAMLVisitor(node *yaml.Node) *YAMLVisitor {
 	return &YAMLVisitor{
-		i:    *common.NewDefaultIndentation(),
-		node: node,
+		anchors: make(map[string]string),
+		i:       *common.NewDefaultIndentation(),
+		node:    node,
 	}
+}
+
+func newAnchorIndentation() *common.Indentation {
+	i := common.NewDefaultIndentation()
+	i.Indent()
+	return i
 }
 
 func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
@@ -53,21 +61,54 @@ func (y *YAMLVisitor) visitScalar(node *yaml.Node) string {
 	return "\"" + node.Value + "\""
 }
 
+func (y *YAMLVisitor) visitAlias(node *yaml.Node) string {
+	return node.Alias.Anchor
+}
+
 func (y *YAMLVisitor) visit(node *yaml.Node) string {
+	var output string
+	indent := y.i
+
+	if node.Anchor != "" {
+		y.i = *newAnchorIndentation()
+	}
+
 	switch node.Kind {
 	case yaml.MappingNode:
-		return y.visitMapping(node)
+		output = y.visitMapping(node)
 	case yaml.SequenceNode:
-		return y.visitSequence(node)
+		output = y.visitSequence(node)
 	case yaml.ScalarNode:
-		return y.visitScalar(node)
+		output = y.visitScalar(node)
+	case yaml.AliasNode:
+		output = y.visitAlias(node)
 	default:
-		return ""
+		output = ""
 	}
+
+	y.i = indent
+	if node.Anchor == "" {
+		return output
+	}
+
+	y.anchors[node.Anchor] = output
+	return node.Anchor
 }
 
 func (y *YAMLVisitor) Visit() string {
-	return y.visit(y.node)
+	firstPass := y.visit(y.node)
+	if len(y.anchors) == 0 {
+		return firstPass
+	}
+
+	secondPass := "let\n"
+	y.i = *newAnchorIndentation()
+	for k, v := range y.anchors {
+		secondPass += y.i.IndentValue() + k + " = " + v + ";\n"
+	}
+	secondPass += "in " + firstPass
+
+	return secondPass
 }
 
 func ToNix(data string) (string, error) {
