@@ -6,7 +6,7 @@ import (
 
 type ConvertFn func(string) (string, error)
 
-func TestFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
 	// Convert to data
 	nixString, err := fromNix(s)
 	if err != nil {
@@ -24,13 +24,13 @@ func TestFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
 	}
 }
 
-func TestFromNixStrings(t *testing.T, nixStrings []string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperFromNixStrings(t *testing.T, nixStrings []string, fromNix ConvertFn, toNix ConvertFn) {
 	for _, s := range nixStrings {
-		TestFromNix(t, s, fromNix, toNix)
+		TestHelperFromNix(t, s, fromNix, toNix)
 	}
 }
 
-func TestToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
 	// Convert to Nix
 	nixString, err := toNix(s)
 	if err != nil {
@@ -48,8 +48,8 @@ func TestToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
 	}
 }
 
-func TestToNixStrings(t *testing.T, dataStrings []string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperToNixStrings(t *testing.T, dataStrings []string, fromNix ConvertFn, toNix ConvertFn) {
 	for _, s := range dataStrings {
-		TestToNix(t, s, fromNix, toNix)
+		TestHelperToNix(t, s, fromNix, toNix)
 	}
 }

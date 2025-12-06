@@ -236,9 +236,9 @@ var nixStrings = []string{
 }
 
 func TestJSONToNix(t *testing.T) {
-	common.TestToNixStrings(t, jsonStrings, FromNix, ToNix)
+	common.TestHelperToNixStrings(t, jsonStrings, FromNix, ToNix)
 }
 
 func TestJSONFromNix(t *testing.T) {
-	common.TestFromNixStrings(t, nixStrings, FromNix, ToNix)
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix)
 }

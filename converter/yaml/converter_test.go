@@ -163,9 +163,9 @@ var nixStrings = []string{
 }
 
 func TestYAMLToNix(t *testing.T) {
-	common.TestToNixStrings(t, yamlStrings, FromNix, ToNix)
+	common.TestHelperToNixStrings(t, yamlStrings, FromNix, ToNix)
 }
 
 func TestYAMLFromNix(t *testing.T) {
-	common.TestFromNixStrings(t, nixStrings, FromNix, ToNix)
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix)
 }
