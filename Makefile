@@ -1,11 +1,12 @@
 # Go files to format
-GOFMT_FILES ?= $(shell find . -name "*.go")
+__GOFMT_FILES != find . -name "*.go"
+GOFMT_FILES ?= ${__GOFMT_FILES}
 
 all: fmt
 
 .PHONY: fmt
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	gofmt -w ${GOFMT_FILES}
 
 .PHONY: clean
 clean:
