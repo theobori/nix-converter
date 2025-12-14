@@ -3,26 +3,30 @@ package toml
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/internal/common"
 )
 
 type TOMLVisitor struct {
-	i    common.Indentation
-	node any
+	i       common.Indentation
+	node    any
+	options *converter.ConverterOptions
 }
 
 const MaxNixNumber = 9223372036854775807 // 64 bits signed - 1
 const MinNixNumber = -9223372036854775807
 
-func NewTOMLVisitor(node any) *TOMLVisitor {
+func NewTOMLVisitor(node any, options *converter.ConverterOptions) *TOMLVisitor {
 	return &TOMLVisitor{
-		i:    *common.NewDefaultIndentation(),
-		node: node,
+		i:       *common.NewDefaultIndentation(),
+		node:    node,
+		options: options,
 	}
 }
 
@@ -40,6 +44,10 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 		t.i.UnIndent()
 	}
 
+	if t.options.SortIterators.SortHashmap {
+		slices.Sort(e)
+	}
+
 	return "{\n" + strings.Join(e, "\n") + "\n" + t.i.IndentValue() + "}", nil
 }
 
@@ -54,6 +62,10 @@ func (t *TOMLVisitor) visitArray(node []any) (string, error) {
 
 		e = append(e, t.i.IndentValue()+itemResult)
 		t.i.UnIndent()
+	}
+
+	if t.options.SortIterators.SortList {
+		slices.Sort(e)
 	}
 
 	return "[\n" + strings.Join(e, "\n") + "\n" + t.i.IndentValue() + "]", nil
@@ -94,7 +106,7 @@ func (t *TOMLVisitor) Visit() (string, error) {
 	return t.visit(t.node)
 }
 
-func ToNix(data string) (string, error) {
+func ToNix(data string, options *converter.ConverterOptions) (string, error) {
 	var node map[string]any
 
 	err := toml.Unmarshal([]byte(data), &node)
@@ -102,5 +114,5 @@ func ToNix(data string) (string, error) {
 		return "", err
 	}
 
-	return NewTOMLVisitor(node).Visit()
+	return NewTOMLVisitor(node, options).Visit()
 }

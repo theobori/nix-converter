@@ -2,6 +2,7 @@ package nix
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/orivej/go-nix/nix/parser"
 )
@@ -58,6 +59,23 @@ func (n *NixVisitor) visitList(node *parser.Node) (any, error) {
 	return out, nil
 }
 
+func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (any, error) {
+	result, err := n.visit(node.Nodes[0])
+	if err != nil {
+		return "", nil
+	}
+
+	t := reflect.TypeOf(result)
+	switch t.Kind() {
+	case reflect.Int64:
+		return -result.(int64), nil
+	case reflect.Float64:
+		return -result.(float64), nil
+	default:
+		return nil, fmt.Errorf("unsupported go type: %s", t.Kind().String())
+	}
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -73,11 +91,15 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	case parser.StringNode, parser.IStringNode:
 		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
 	case parser.IntNode:
-		return VisitInt(n.p, node)
+		return VisitIntRaw(n.p, node)
 	case parser.FloatNode:
-		return VisitFloat(n.p, node)
+		return VisitFloatRaw(n.p, node)
+	case parser.OpNode + 57378: // The negative unary operator
+		return n.visitUnaryNegative(node)
+	case parser.ApplyNode:
+		return VisitApplyRaw(n.p, node)
 	default:
-		return nil, fmt.Errorf("unsupported node type: %s", node.Type.String())
+		return nil, fmt.Errorf("unsupported node type: %s", node.Type)
 	}
 }
 

@@ -10,20 +10,21 @@ import (
 
 	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/converter/json"
+	"github.com/theobori/nix-converter/converter/options"
 	"github.com/theobori/nix-converter/converter/toml"
 	"github.com/theobori/nix-converter/converter/yaml"
 )
 
-func ConverterFromLanguage(language string, data string) (*converter.Converter, error) {
+func ConverterFromLanguage(language string, data string, options *converter.ConverterOptions) (*converter.Converter, error) {
 	var c converter.Converter
 
 	switch language {
 	case "json":
-		c = json.NewJSONConverter(data)
+		c = json.NewJSONConverter(data, options)
 	case "yaml":
-		c = yaml.NewYAMLConverter(data)
+		c = yaml.NewYAMLConverter(data, options)
 	case "toml":
-		c = toml.NewTOMLConverter(data)
+		c = toml.NewTOMLConverter(data, options)
 	default:
 		return nil, fmt.Errorf("this configuration language is not implemented")
 	}
@@ -33,10 +34,11 @@ func ConverterFromLanguage(language string, data string) (*converter.Converter, 
 
 func main() {
 	var (
-		err      error
-		language string
-		filename string
-		fromNix  bool
+		err               error
+		language          string
+		filename          string
+		fromNix           bool
+		sortIteratorsLine string
 	)
 
 	flag.StringVar(&language, "language", "json", "Configuration language name")
@@ -47,8 +49,23 @@ func main() {
 	flag.StringVar(&filename, "f", "", "Read input from a file (shorthand)")
 
 	flag.BoolVar(&fromNix, "from-nix", false, "Convert Nix to a data format, instead of data format to Nix")
+	flag.StringVar(&sortIteratorsLine, "sort-iterators", "", "Sort iterators by their kind, they must be separated by ',' like 'list,hashmap'")
 
 	flag.Parse()
+
+	var sortIterators *options.SortIterators
+	if sortIteratorsLine != "" {
+		sortIterators, err = options.NewSortIteratorsFromLine(sortIteratorsLine)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		sortIterators = options.NewDefaultSortIterators()
+	}
+
+	converterOptions := converter.ConverterOptions{
+		SortIterators: *sortIterators,
+	}
 
 	var bytes []byte
 	if filename == "" {
@@ -63,7 +80,7 @@ func main() {
 
 	data := string(bytes)
 
-	c, err := ConverterFromLanguage(language, data)
+	c, err := ConverterFromLanguage(language, data, &converterOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}

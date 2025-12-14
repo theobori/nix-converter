@@ -3,6 +3,7 @@ package yaml
 import (
 	"testing"
 
+	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/internal/common"
 )
 
@@ -140,6 +141,13 @@ var nixStrings = []string{
     {
       name = "Bob";
       age = 34;
+      age2 = -34;
+      age3 = -3.45;
+      ag2 = -0;
+      ag2123 = 0.001;
+      age12 = -0.45;
+      age4 = -0.0045;
+      age5 = -0.00000000000000000000000045;
       pets = "null";
     }
   ];
@@ -163,9 +171,9 @@ var nixStrings = []string{
 }
 
 func TestYAMLToNix(t *testing.T) {
-	common.TestHelperToNixStrings(t, yamlStrings, FromNix, ToNix)
+	common.TestHelperToNixStrings(t, yamlStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }
 
 func TestYAMLFromNix(t *testing.T) {
-	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix)
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }

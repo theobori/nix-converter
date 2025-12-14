@@ -2,8 +2,10 @@ package yaml
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
+	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/internal/common"
 	"gopkg.in/yaml.v3"
 )
@@ -12,13 +14,15 @@ type YAMLVisitor struct {
 	anchors map[string]string
 	i       common.Indentation
 	node    *yaml.Node
+	options *converter.ConverterOptions
 }
 
-func NewYAMLVisitor(node *yaml.Node) *YAMLVisitor {
+func NewYAMLVisitor(node *yaml.Node, options *converter.ConverterOptions) *YAMLVisitor {
 	return &YAMLVisitor{
 		anchors: make(map[string]string),
 		i:       *common.NewDefaultIndentation(),
 		node:    node,
+		options: options,
 	}
 }
 
@@ -39,6 +43,10 @@ func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
 		y.i.UnIndent()
 	}
 
+	if y.options.SortIterators.SortHashmap {
+		slices.Sort(e)
+	}
+
 	return "{\n" + strings.Join(e, "\n") + "\n" + y.i.IndentValue() + "}"
 }
 
@@ -48,6 +56,10 @@ func (y *YAMLVisitor) visitSequence(node *yaml.Node) string {
 		y.i.Indent()
 		e = append(e, y.i.IndentValue()+y.visit(item))
 		y.i.UnIndent()
+	}
+
+	if y.options.SortIterators.SortList {
+		slices.Sort(e)
 	}
 
 	return "[\n" + strings.Join(e, "\n") + "\n" + y.i.IndentValue() + "]"
@@ -111,7 +123,7 @@ func (y *YAMLVisitor) Visit() string {
 	return secondPass
 }
 
-func ToNix(data string) (string, error) {
+func ToNix(data string, options *converter.ConverterOptions) (string, error) {
 	var node yaml.Node
 
 	err := yaml.Unmarshal([]byte(data), &node)
@@ -123,7 +135,7 @@ func ToNix(data string) (string, error) {
 		return "", fmt.Errorf("empty node")
 	}
 
-	out := NewYAMLVisitor(node.Content[0]).Visit()
+	out := NewYAMLVisitor(node.Content[0], options).Visit()
 
 	return out, nil
 }

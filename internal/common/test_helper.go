@@ -2,19 +2,21 @@ package common
 
 import (
 	"testing"
+
+	"github.com/theobori/nix-converter/converter"
 )
 
-type ConvertFn func(string) (string, error)
+type ConvertFn func(string, *converter.ConverterOptions) (string, error)
 
-func TestHelperFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn, options *converter.ConverterOptions) {
 	// Convert to data
-	nixString, err := fromNix(s)
+	nixString, err := fromNix(s, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Convert back to Nix
-	dataString, err := toNix(nixString)
+	dataString, err := toNix(nixString, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,21 +26,21 @@ func TestHelperFromNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertF
 	}
 }
 
-func TestHelperFromNixStrings(t *testing.T, nixStrings []string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperFromNixStrings(t *testing.T, nixStrings []string, fromNix ConvertFn, toNix ConvertFn, options *converter.ConverterOptions) {
 	for _, s := range nixStrings {
-		TestHelperFromNix(t, s, fromNix, toNix)
+		TestHelperFromNix(t, s, fromNix, toNix, options)
 	}
 }
 
-func TestHelperToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn, options *converter.ConverterOptions) {
 	// Convert to Nix
-	nixString, err := toNix(s)
+	nixString, err := toNix(s, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Convert back to data
-	dataString, err := fromNix(nixString)
+	dataString, err := fromNix(nixString, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,8 +50,8 @@ func TestHelperToNix(t *testing.T, s string, fromNix ConvertFn, toNix ConvertFn)
 	}
 }
 
-func TestHelperToNixStrings(t *testing.T, dataStrings []string, fromNix ConvertFn, toNix ConvertFn) {
+func TestHelperToNixStrings(t *testing.T, dataStrings []string, fromNix ConvertFn, toNix ConvertFn, options *converter.ConverterOptions) {
 	for _, s := range dataStrings {
-		TestHelperToNix(t, s, fromNix, toNix)
+		TestHelperToNix(t, s, fromNix, toNix, options)
 	}
 }

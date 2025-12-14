@@ -1,21 +1,25 @@
 package json
 
 import (
+	"slices"
 	"strings"
 
+	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/internal/common"
 	"github.com/valyala/fastjson"
 )
 
 type JSONVisitor struct {
-	i     common.Indentation
-	value *fastjson.Value
+	i       common.Indentation
+	value   *fastjson.Value
+	options *converter.ConverterOptions
 }
 
-func NewJSONVisitor(value *fastjson.Value) *JSONVisitor {
+func NewJSONVisitor(value *fastjson.Value, options *converter.ConverterOptions) *JSONVisitor {
 	return &JSONVisitor{
-		i:     *common.NewDefaultIndentation(),
-		value: value,
+		i:       *common.NewDefaultIndentation(),
+		value:   value,
+		options: options,
 	}
 }
 
@@ -29,6 +33,10 @@ func (j *JSONVisitor) visitObject(value *fastjson.Value) string {
 		j.i.UnIndent()
 	})
 
+	if j.options.SortIterators.SortHashmap {
+		slices.Sort(e)
+	}
+
 	return "{\n" + strings.Join(e, "\n") + "\n" + j.i.IndentValue() + "}"
 }
 
@@ -40,6 +48,10 @@ func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 		j.i.Indent()
 		e = append(e, j.i.IndentValue()+j.visit(item))
 		j.i.UnIndent()
+	}
+
+	if j.options.SortIterators.SortList {
+		slices.Sort(e)
 	}
 
 	return "[\n" + strings.Join(e, "\n") + "\n" + j.i.IndentValue() + "]"
@@ -90,13 +102,13 @@ func (j *JSONVisitor) Visit() string {
 	return j.visit(j.value)
 }
 
-func ToNix(data string) (string, error) {
+func ToNix(data string, options *converter.ConverterOptions) (string, error) {
 	v, err := fastjson.Parse(data)
 	if err != nil {
 		return "", err
 	}
 
-	out := NewJSONVisitor(v).Visit()
+	out := NewJSONVisitor(v, options).Visit()
 
 	return out, nil
 }

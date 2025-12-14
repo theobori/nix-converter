@@ -2,6 +2,9 @@ package toml
 
 import (
 	"testing"
+
+	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/converter/options"
 )
 
 var tomlStrings = []string{
@@ -95,6 +98,13 @@ var nixStrings = []string{
     {
       name = "Bob";
       age = 34;
+      age2 = -34;
+      age3 = -3.45;
+      ag2 = -0;
+      age12 = -0.45;
+      ag2123 = 0.001;
+      age4 = -0.0045;
+      age5 = -0.00000000000000000000000045;
       pets = null;
     }
   ];
@@ -123,10 +133,15 @@ var nixStrings = []string{
 
 // Not comparing anything because its using Go maps (unordered)
 func TestTOMLToNix(t *testing.T) {
-	for _, tomlString := range tomlStrings {
-		c := NewTOMLConverter(tomlString)
+	options := converter.ConverterOptions{
+		SortIterators: options.SortIterators{
+			SortList:    true,
+			SortHashmap: true,
+		},
+	}
 
-		_, err := c.ToNix()
+	for _, tomlString := range tomlStrings {
+		_, err := ToNix(tomlString, &options)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -136,9 +151,7 @@ func TestTOMLToNix(t *testing.T) {
 // Not comparing anything because its using Go maps (unordered)
 func TestTOMLFromNix(t *testing.T) {
 	for _, nixString := range nixStrings {
-		c := NewTOMLConverter(nixString)
-
-		_, err := c.FromNix()
+		_, err := FromNix(nixString, converter.NewDefaultConverterOptions())
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -26,13 +26,14 @@ The following languages are supported.
 | **TOML** | Yes (unstable output) | Yes |
 
 The YAML evaluation support anchors. They are handled during the YAML to Nix conversion.
+Every combinaisons support iterators sorting except Nix to TOML.
 
 ## Getting started
 
 To start using the tool, simply run the following command.
 
 ```bash
-nix-converter --help
+nix-converter -help
 ```
 
 By default, the program reads the standard input.
@@ -43,7 +44,7 @@ Here are a few examples of how to use the tool.
 
 ### From Nix to JSON using the standard input
 ```bash
-echo -n "{a = [1 2 3];}" | nix-converter --from-nix -l json
+echo -n "{a = [1 2 3];}" | nix-converter -from-nix -l json
 ```
 
 ### From YAML to Nix using a file named `a.yaml`
@@ -66,7 +67,7 @@ nix-converter -f a.yaml -l yaml
 
 It is also possible to use multiple UNIX pipe.
 ```bash
-nix-converter -f a.yaml -l yaml | nix-converter --from-nix -l json
+nix-converter -f a.yaml -l yaml | nix-converter -from-nix -l json
 ```
 
 ### From YAML to Nix with anchor using a file named `anchor.yaml`
@@ -144,7 +145,34 @@ nix-converter -f anchor.yaml -l yaml
 ```
 
 ```bash
-nix-converter --from-nix -f a.nix -l yaml
+nix-converter -from-nix -f a.nix -l yaml
+```
+
+### From YAML to Nix using a file named `anchor.yaml` with iterators sorting
+```yaml
+# anchor.yaml
+definitions:
+  steps:
+    - step: &build-test
+        c: Build and test
+        b:
+          - mvn3 package
+          - mvn2 package
+          - mvn package
+        a:
+          - -1
+          - 1
+pipelines:
+  branches:
+    v: -1.123
+    main:
+      - step: *build-test
+```
+
+```bash
+nix-converter -f anchor.yaml -l yaml -sort-iterators "all"
+# or
+nix-converter -f anchor.yaml -l yaml -sort-iterators "list,hashmap"
 ```
 
 ### Get a Go value from Nix

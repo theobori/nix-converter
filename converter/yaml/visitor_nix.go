@@ -2,9 +2,11 @@ package yaml
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/orivej/go-nix/nix/parser"
+	"github.com/theobori/nix-converter/converter"
 	"github.com/theobori/nix-converter/converter/nix"
 	"github.com/theobori/nix-converter/internal/common"
 )
@@ -22,16 +24,18 @@ func isYAMLString(s string) bool {
 }
 
 type NixVisitor struct {
-	i    common.Indentation
-	p    *parser.Parser
-	node *parser.Node
+	i       common.Indentation
+	p       *parser.Parser
+	node    *parser.Node
+	options *converter.ConverterOptions
 }
 
-func NewNixVisitor(p *parser.Parser, node *parser.Node) *NixVisitor {
+func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.ConverterOptions) *NixVisitor {
 	return &NixVisitor{
-		i:    *common.NewDefaultIndentation(),
-		node: node,
-		p:    p,
+		i:       *common.NewDefaultIndentation(),
+		node:    node,
+		p:       p,
+		options: options,
 	}
 }
 
@@ -59,8 +63,6 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 				}
 				e = append(e, keyString+value)
 			} else {
-				e = append(e, keyString)
-
 				n.i.Indent()
 				value, err := n.visit(valueNode)
 				if err != nil {
@@ -68,7 +70,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 				}
 				n.i.UnIndent()
 
-				e = append(e, value)
+				e = append(e, keyString+"\n"+value)
 			}
 		default:
 			value, err := n.visit(valueNode)
@@ -77,6 +79,10 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			}
 			e = append(e, keyString+value)
 		}
+	}
+
+	if n.options.SortIterators.SortHashmap {
+		slices.Sort(e)
 	}
 
 	return strings.Join(e, "\n"), nil
@@ -101,6 +107,10 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 		e = append(e, n.i.IndentValue()+"- "+strings.TrimLeft(s, " "))
 	}
 
+	if n.options.SortIterators.SortList {
+		slices.Sort(e)
+	}
+
 	return strings.Join(e, "\n"), nil
 }
 
@@ -112,6 +122,15 @@ func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
 	}
 
 	return token, nil
+}
+
+func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
+	result, err := n.visit(node.Nodes[0])
+	if err != nil {
+		return "", nil
+	}
+
+	return "-" + result, nil
 }
 
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
@@ -132,6 +151,10 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:
 		return nix.VisitFloat(n.p, node)
+	case parser.OpNode + 57378: // The negative unary operator
+		return n.visitUnaryNegative(node)
+	case parser.ApplyNode:
+		return nix.VisitApply(n.p, node)
 	default:
 		return "", fmt.Errorf("unsupported node type: %s", node.Type.String())
 	}
@@ -141,13 +164,13 @@ func (n *NixVisitor) Visit() (string, error) {
 	return n.visit(n.node)
 }
 
-func FromNix(data string) (string, error) {
+func FromNix(data string, options *converter.ConverterOptions) (string, error) {
 	p, err := parser.ParseString(data)
 	if err != nil {
 		return "", err
 	}
 
-	out, err := NewNixVisitor(p, p.Result).Visit()
+	out, err := NewNixVisitor(p, p.Result, options).Visit()
 	if err != nil {
 		return "", err
 	}
