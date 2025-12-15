@@ -1,6 +1,6 @@
 package nix
 
-func SafeName(s string) string {
+func MakeNameSafe(s string) string {
 	if IsNameUnsafe(s) {
 		return "\"" + s + "\""
 	}
@@ -8,7 +8,7 @@ func SafeName(s string) string {
 	return s
 }
 
-func SafeElement(s string) string {
+func MakeElementSafe(s string) string {
 	if IsElementUnsafe(s) {
 		return "(" + s + ")"
 	}

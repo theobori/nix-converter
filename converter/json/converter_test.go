@@ -2,7 +2,9 @@ package json
 
 import (
 	"testing"
-	// "github.com/theobori/nix-converter/internal/common"
+
+	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/internal/common"
 )
 
 var jsonStrings = []string{
@@ -246,9 +248,9 @@ var nixStrings = []string{
 }
 
 func TestJSONToNix(t *testing.T) {
-	// common.TestHelperToNixStrings(t, jsonStrings, FromNix, ToNix)
+	common.TestHelperToNixStrings(t, jsonStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }
 
 func TestJSONFromNix(t *testing.T) {
-	// common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix)
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }

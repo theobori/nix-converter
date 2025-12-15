@@ -36,7 +36,7 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 
 	for key, value := range node {
 		t.i.Indent()
-		left := nix.SafeName(string(key))
+		left := nix.MakeNameSafe(string(key))
 		valueResult, err := t.visit(value)
 		if err != nil {
 			return "", err
@@ -62,7 +62,7 @@ func (t *TOMLVisitor) visitArray(node []any) (string, error) {
 			return "", err
 		}
 
-		e = append(e, t.i.IndentValue()+nix.SafeElement(itemResult))
+		e = append(e, t.i.IndentValue()+nix.MakeElementSafe(itemResult))
 		t.i.UnIndent()
 	}
 

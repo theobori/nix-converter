@@ -11,18 +11,6 @@ import (
 	"github.com/theobori/nix-converter/internal/common"
 )
 
-const YAMLIndentSize = 2
-
-func isYAMLString(s string) bool {
-	for i := range s {
-		if !common.IsAlphaNumeric(s[i]) && s[i] != ' ' {
-			return false
-		}
-	}
-
-	return true
-}
-
 type NixVisitor struct {
 	i       common.Indentation
 	p       *parser.Parser
@@ -51,9 +39,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
-		if key == "" {
-			key = "\"\""
-		}
+		key = MakeNameSafe(key)
 
 		valueNode := child.Nodes[1]
 		keyString := n.i.IndentValue() + key + ": "
@@ -120,16 +106,12 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 
 func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
 	if len(node.Nodes) == 0 {
-		return "\"\"", nil
+		return MakeStringSafe(""), nil
 	}
 
 	token := n.p.TokenString(node.Nodes[0].Tokens[0])
 
-	if !isYAMLString(token) {
-		token = "\"" + token + "\""
-	}
-
-	return token, nil
+	return MakeStringSafe(token), nil
 }
 
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
