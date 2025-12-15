@@ -61,6 +61,11 @@ ports = [ 8000, 8001, 8002 ]
 data = [ ["delta", "phi"], [3.14] ]
 temp_targets = { cpu = 79.5, case = 72.0 }
 temp_targ = 12345
+"" = 22
+ggg = ""
+ee = ""
+123123123123123 = "-11"
+a = [1,2,3,-1, "-1", -123, "-123123123"]
 
 [servers]
 
@@ -101,6 +106,8 @@ var nixStrings = []string{
       age2 = -34;
       age3 = -3.45;
       ag2 = -0;
+      "" = 123;
+      helloooo = "";
       age12 = -0.45;
       ag2123 = 0.001;
       age4 = -0.0045;

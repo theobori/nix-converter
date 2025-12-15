@@ -157,7 +157,9 @@ var jsonStrings = []string{
                                             "efficiency": {
                                               "city": 52,
                                               "highway": 48,
-                                              "combined": 50
+                                              "combined": 50,
+                                              "": 123,
+                                              "123": ""
                                             }
                                           }
                                         }
@@ -211,6 +213,8 @@ var nixStrings = []string{
       age2 = -34;
       age3 = -3.45;
       ag2 = -0;
+      "" = 123;
+      hello = "";
       age12 = -0.45;
       ag2123 = 0.001;
       age4 = -0.0045;

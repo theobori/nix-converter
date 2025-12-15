@@ -114,7 +114,10 @@ var yamlStrings = []string{
                                           efficiency: 
                                             city: 52
                                             highway: 48
-                                            combined: 50`,
+                                            combined: 50
+                                            "": 123
+                                            123: ""
+                                            1234: -1`,
 }
 
 var nixStrings = []string{
@@ -145,10 +148,12 @@ var nixStrings = []string{
       age3 = -3.45;
       ag2 = -0;
       ag2123 = 0.001;
+      "" = 321;
       age12 = -0.45;
       age4 = -0.0045;
       age5 = -0.00000000000000000000000045;
       pets = "null";
+      "123" = "";
     }
   ];
   settings = {

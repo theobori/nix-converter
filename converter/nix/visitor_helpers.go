@@ -18,6 +18,9 @@ func VisitAttrPathNode(p *parser.Parser, node *parser.Node) (string, error) {
 	var token int
 	// Case when the value is between double quotes
 	if len(tokens) > 1 {
+		if len(node.Nodes[0].Nodes) == 0 {
+			return "", nil
+		}
 		token = node.Nodes[0].Nodes[0].Tokens[0]
 	} else {
 		token = tokens[0]
@@ -31,6 +34,10 @@ func VisitID(p *parser.Parser, node *parser.Node) (string, error) {
 }
 
 func VisitString(p *parser.Parser, node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 {
+		return "\"\"", nil
+	}
+
 	return "\"" + p.TokenString(node.Nodes[0].Tokens[0]) + "\"", nil
 }
 

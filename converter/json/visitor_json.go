@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/converter/nix"
 	"github.com/theobori/nix-converter/internal/common"
 	"github.com/valyala/fastjson"
 )
@@ -29,7 +30,10 @@ func (j *JSONVisitor) visitObject(value *fastjson.Value) string {
 	e := []string{}
 	o.Visit(func(key []byte, v *fastjson.Value) {
 		j.i.Indent()
-		e = append(e, j.i.IndentValue()+string(key)+" = "+j.visit(v)+";")
+		left := nix.SafeName(string(key))
+		right := j.visit(v)
+
+		e = append(e, j.i.IndentValue()+left+" = "+right+";")
 		j.i.UnIndent()
 	})
 
@@ -46,7 +50,9 @@ func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 	e := []string{}
 	for _, item := range arr {
 		j.i.Indent()
-		e = append(e, j.i.IndentValue()+j.visit(item))
+		element := nix.SafeElement(j.visit(item))
+
+		e = append(e, j.i.IndentValue()+element)
 		j.i.UnIndent()
 	}
 
@@ -58,6 +64,7 @@ func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 }
 
 func (j *JSONVisitor) visitString(value *fastjson.Value) string {
+	// v := value.String()
 	return value.String()
 }
 

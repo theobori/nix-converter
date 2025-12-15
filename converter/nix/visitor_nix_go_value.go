@@ -76,6 +76,14 @@ func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (any, error) {
 	}
 }
 
+func (n *NixVisitor) visitString(node *parser.Node) (any, error) {
+	if len(node.Nodes) == 0 {
+		return "", nil
+	}
+
+	return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -89,7 +97,7 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	case parser.IDNode:
 		return VisitID(n.p, node)
 	case parser.StringNode, parser.IStringNode:
-		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+		return n.visitString(node)
 	case parser.IntNode:
 		return VisitIntRaw(n.p, node)
 	case parser.FloatNode:

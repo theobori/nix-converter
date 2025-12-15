@@ -10,6 +10,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/converter/nix"
 	"github.com/theobori/nix-converter/internal/common"
 )
 
@@ -35,12 +36,13 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 
 	for key, value := range node {
 		t.i.Indent()
+		left := nix.SafeName(string(key))
 		valueResult, err := t.visit(value)
 		if err != nil {
 			return "", err
 		}
 
-		e = append(e, t.i.IndentValue()+string(key)+" = "+valueResult+";")
+		e = append(e, t.i.IndentValue()+left+" = "+valueResult+";")
 		t.i.UnIndent()
 	}
 
@@ -60,7 +62,7 @@ func (t *TOMLVisitor) visitArray(node []any) (string, error) {
 			return "", err
 		}
 
-		e = append(e, t.i.IndentValue()+itemResult)
+		e = append(e, t.i.IndentValue()+nix.SafeElement(itemResult))
 		t.i.UnIndent()
 	}
 

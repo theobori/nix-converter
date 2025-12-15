@@ -51,6 +51,10 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
+		if key == "" {
+			key = "\"\""
+		}
+
 		valueNode := child.Nodes[1]
 		keyString := n.i.IndentValue() + key + ": "
 
@@ -115,6 +119,10 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 }
 
 func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 {
+		return "\"\"", nil
+	}
+
 	token := n.p.TokenString(node.Nodes[0].Tokens[0])
 
 	if !isYAMLString(token) {
