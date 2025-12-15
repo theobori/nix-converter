@@ -4,12 +4,12 @@ func IsNumeric(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
-func IsAlpha(c byte) bool {
+func IsCharAlpha(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
-func IsAlphaNumeric(c byte) bool {
-	return IsAlpha(c) || IsNumeric(c)
+func IsCharAlphaNumeric(c byte) bool {
+	return IsCharAlpha(c) || IsNumeric(c)
 }
 
 func IsNumber(s string) bool {
@@ -46,7 +46,7 @@ func IsNumber(s string) bool {
 		}
 
 		if s[i] == '.' && i < n-1 {
-			if dot == true {
+			if dot {
 				return false
 			}
 

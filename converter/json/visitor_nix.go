@@ -30,6 +30,10 @@ func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.Conve
 }
 
 func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 {
+		return "{}", nil
+	}
+
 	e := []string{}
 	for _, child := range node.Nodes {
 		n.i.Indent()
@@ -43,7 +47,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
-		e = append(e, n.i.IndentValue()+"\""+key+"\""+": "+value)
+		e = append(e, n.i.IndentValue()+common.MakeStringSafe(key)+": "+value)
 		n.i.UnIndent()
 	}
 
@@ -55,6 +59,10 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 }
 
 func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 {
+		return "[]", nil
+	}
+
 	e := []string{}
 	for _, child := range node.Nodes {
 		n.i.Indent()

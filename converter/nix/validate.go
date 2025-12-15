@@ -2,6 +2,10 @@ package nix
 
 import "github.com/theobori/nix-converter/internal/common"
 
+func IsCharSafe(c byte) bool {
+	return common.IsCharAlphaNumeric(c) || c == '-' || c == '_'
+}
+
 func IsNameUnsafe(s string) bool {
 	n := len(s)
 
@@ -9,12 +13,12 @@ func IsNameUnsafe(s string) bool {
 		return true
 	}
 
-	if !common.IsAlpha(s[0]) {
+	if !common.IsCharAlpha(s[0]) {
 		return true
 	}
 
 	for i := 1; i < n; i++ {
-		if !common.IsAlphaNumeric(s[i]) {
+		if !IsCharSafe(s[i]) {
 			return true
 		}
 	}

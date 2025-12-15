@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/converter/options"
 	"github.com/theobori/nix-converter/internal/common"
 )
 
@@ -160,9 +161,7 @@ var nixStrings = []string{
         {
           type = "cat";
           name = "Luna";
-          toys = [
-
-          ];
+          toys = [];
         }
         {
           type = "dog";
@@ -198,9 +197,7 @@ var nixStrings = []string{
     };
     notifications = true;
   };
-  meta = {
-
-  };
+  meta = {};
 }`,
 }
 
@@ -209,5 +206,10 @@ func TestYAMLToNix(t *testing.T) {
 }
 
 func TestYAMLFromNix(t *testing.T) {
-	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
+	options := converter.ConverterOptions{
+		SortIterators: *options.NewDefaultSortIterators(),
+		UnsafeKeys:    true,
+	}
+
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, &options)
 }

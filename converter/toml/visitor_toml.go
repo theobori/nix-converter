@@ -32,11 +32,15 @@ func NewTOMLVisitor(node any, options *converter.ConverterOptions) *TOMLVisitor 
 }
 
 func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
+	if len(node) == 0 {
+		return "{}", nil
+	}
+
 	e := []string{}
 
 	for key, value := range node {
 		t.i.Indent()
-		left := nix.MakeNameSafe(string(key))
+		left := nix.MakeNameSafe(string(key), t.options.UnsafeKeys)
 		valueResult, err := t.visit(value)
 		if err != nil {
 			return "", err
@@ -54,6 +58,10 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 }
 
 func (t *TOMLVisitor) visitArray(node []any) (string, error) {
+	if len(node) == 0 {
+		return "[]", nil
+	}
+
 	e := []string{}
 	for _, item := range node {
 		t.i.Indent()
@@ -80,7 +88,7 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	case []any:
 		return t.visitArray(v)
 	case time.Time:
-		return "\"" + v.String() + "\"", nil
+		return common.MakeStringSafe(v.String()), nil
 	case float64:
 		if math.IsNaN(v) || math.IsInf(v, 0) {
 			return "null", nil
@@ -100,7 +108,7 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	case bool:
 		return strconv.FormatBool(v), nil
 	default:
-		return "\"" + v.(string) + "\"", nil
+		return common.MakeStringSafe(v.(string)), nil
 	}
 }
 

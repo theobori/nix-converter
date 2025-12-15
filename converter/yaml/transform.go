@@ -1,18 +1,16 @@
 package yaml
 
-func MakeNameSafe(s string, forceSafe bool) string {
-	if !forceSafe {
+import "github.com/theobori/nix-converter/internal/common"
+
+func MakeNameSafe(s string, forceUnsafe bool) string {
+	if forceUnsafe {
 		// Check some YAML edges case
 		if IsStringUnsafe(s) {
-			return MakeStringSafe(s)
+			return common.MakeStringSafe(s)
 		}
 
 		return s
 	}
 
-	return MakeStringSafe(s)
-}
-
-func MakeStringSafe(s string) string {
-	return "\"" + s + "\""
+	return common.MakeStringSafe(s)
 }

@@ -26,7 +26,6 @@ The following languages are supported.
 | **TOML** | Yes (unstable output) | Yes |
 
 The YAML evaluation support anchors. They are handled during the YAML to Nix conversion.
-Every combinaisons support iterators sorting except Nix to TOML.
 
 ## Getting started
 
@@ -36,7 +35,7 @@ To start using the tool, simply run the following command.
 nix-converter -help
 ```
 
-By default, the program reads the standard input.
+By default, every generated hashmap key strings are protected, it means they are surrounded by double quotes, to avoid this behavior you can use the `-unsafe-keys` CLI flag.
 
 ## Examples
 

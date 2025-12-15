@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/theobori/nix-converter/converter"
+	"github.com/theobori/nix-converter/converter/options"
 	"github.com/theobori/nix-converter/internal/common"
 )
 
@@ -252,5 +253,10 @@ func TestJSONToNix(t *testing.T) {
 }
 
 func TestJSONFromNix(t *testing.T) {
-	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
+	options := converter.ConverterOptions{
+		SortIterators: *options.NewDefaultSortIterators(),
+		UnsafeKeys:    true,
+	}
+
+	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, &options)
 }

@@ -34,9 +34,14 @@ func newAnchorIndentation() *common.Indentation {
 }
 
 func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
+	n := len(node.Content)
+	if n == 0 {
+		return "{}"
+	}
+
 	e := []string{}
-	for i := 0; i < len(node.Content); i += 2 {
-		key := nix.MakeNameSafe(node.Content[i].Value)
+	for i := 0; i < n; i += 2 {
+		key := nix.MakeNameSafe(node.Content[i].Value, y.options.UnsafeKeys)
 		value := node.Content[i+1]
 
 		y.i.Indent()
@@ -52,6 +57,10 @@ func (y *YAMLVisitor) visitMapping(node *yaml.Node) string {
 }
 
 func (y *YAMLVisitor) visitSequence(node *yaml.Node) string {
+	if len(node.Content) == 0 {
+		return "[]"
+	}
+
 	e := []string{}
 	for _, item := range node.Content {
 		y.i.Indent()
@@ -72,7 +81,7 @@ func (y *YAMLVisitor) visitScalar(node *yaml.Node) string {
 		return node.Value
 	}
 
-	return "\"" + node.Value + "\""
+	return common.MakeStringSafe(node.Value)
 }
 
 func (y *YAMLVisitor) visitAlias(node *yaml.Node) string {

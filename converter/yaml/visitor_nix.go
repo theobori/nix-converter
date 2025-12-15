@@ -39,7 +39,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
-		key = MakeNameSafe(key, !n.options.UnsafeKeys)
+		key = MakeNameSafe(key, n.options.UnsafeKeys)
 
 		valueNode := child.Nodes[1]
 		keyString := n.i.IndentValue() + key + ": "
@@ -104,16 +104,6 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 	return strings.Join(e, "\n"), nil
 }
 
-func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
-	if len(node.Nodes) == 0 {
-		return MakeStringSafe(""), nil
-	}
-
-	token := n.p.TokenString(node.Nodes[0].Tokens[0])
-
-	return MakeStringSafe(token), nil
-}
-
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 	result, err := n.visit(node.Nodes[0])
 	if err != nil {
@@ -136,7 +126,7 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
 	case parser.StringNode, parser.IStringNode:
-		return n.visitString(node)
+		return nix.VisitString(n.p, node)
 	case parser.IntNode:
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:

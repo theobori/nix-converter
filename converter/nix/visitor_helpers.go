@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/orivej/go-nix/nix/parser"
+	"github.com/theobori/nix-converter/internal/common"
 )
 
 const IndentSize = 2
@@ -35,10 +36,12 @@ func VisitID(p *parser.Parser, node *parser.Node) (string, error) {
 
 func VisitString(p *parser.Parser, node *parser.Node) (string, error) {
 	if len(node.Nodes) == 0 {
-		return "\"\"", nil
+		return common.MakeStringSafe(""), nil
 	}
 
-	return "\"" + p.TokenString(node.Nodes[0].Tokens[0]) + "\"", nil
+	token := p.TokenString(node.Nodes[0].Tokens[0])
+
+	return common.MakeStringSafe(token), nil
 }
 
 func VisitInt(p *parser.Parser, node *parser.Node) (string, error) {

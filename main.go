@@ -51,7 +51,7 @@ func main() {
 
 	flag.BoolVar(&fromNix, "from-nix", false, "Convert Nix to a data format, instead of data format to Nix")
 	flag.StringVar(&sortIteratorsLine, "sort-iterators", "", "If possible, it sorts iterators, specify them separated by ',' like 'list,hashmap'")
-	flag.BoolVar(&unsafeKeys, "unsafe-keys", false, "If possible, avoids double quotes around hashmaps keys")
+	flag.BoolVar(&unsafeKeys, "unsafe-keys", false, "If possible, it skips double quotes around hashmaps keys")
 
 	flag.Parse()
 

@@ -27,10 +27,14 @@ func NewJSONVisitor(value *fastjson.Value, options *converter.ConverterOptions) 
 func (j *JSONVisitor) visitObject(value *fastjson.Value) string {
 	o, _ := value.Object()
 
+	if o.Len() == 0 {
+		return "{}"
+	}
+
 	e := []string{}
 	o.Visit(func(key []byte, v *fastjson.Value) {
 		j.i.Indent()
-		left := nix.MakeNameSafe(string(key))
+		left := nix.MakeNameSafe(string(key), j.options.UnsafeKeys)
 		right := j.visit(v)
 
 		e = append(e, j.i.IndentValue()+left+" = "+right+";")
@@ -46,6 +50,10 @@ func (j *JSONVisitor) visitObject(value *fastjson.Value) string {
 
 func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 	arr, _ := value.Array()
+
+	if len(arr) == 0 {
+		return "[]"
+	}
 
 	e := []string{}
 	for _, item := range arr {
