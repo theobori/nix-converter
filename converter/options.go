@@ -6,10 +6,12 @@ import (
 
 type ConverterOptions struct {
 	SortIterators options.SortIterators
+	UnsafeKeys    bool
 }
 
 func NewDefaultConverterOptions() *ConverterOptions {
 	return &ConverterOptions{
 		SortIterators: *options.NewDefaultSortIterators(),
+		UnsafeKeys:    false,
 	}
 }

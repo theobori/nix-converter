@@ -39,6 +39,7 @@ func main() {
 		filename          string
 		fromNix           bool
 		sortIteratorsLine string
+		unsafeKeys        bool
 	)
 
 	flag.StringVar(&language, "language", "json", "Configuration language name")
@@ -49,7 +50,8 @@ func main() {
 	flag.StringVar(&filename, "f", "", "Read input from a file (shorthand)")
 
 	flag.BoolVar(&fromNix, "from-nix", false, "Convert Nix to a data format, instead of data format to Nix")
-	flag.StringVar(&sortIteratorsLine, "sort-iterators", "", "Sort iterators by their kind, they must be separated by ',' like 'list,hashmap'")
+	flag.StringVar(&sortIteratorsLine, "sort-iterators", "", "If possible, it sorts iterators, specify them separated by ',' like 'list,hashmap'")
+	flag.BoolVar(&unsafeKeys, "unsafe-keys", false, "If possible, avoids double quotes around hashmaps keys")
 
 	flag.Parse()
 
@@ -65,6 +67,7 @@ func main() {
 
 	converterOptions := converter.ConverterOptions{
 		SortIterators: *sortIterators,
+		UnsafeKeys:    unsafeKeys,
 	}
 
 	var bytes []byte

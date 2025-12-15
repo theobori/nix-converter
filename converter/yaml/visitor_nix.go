@@ -39,7 +39,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			return "", err
 		}
 
-		key = MakeNameSafe(key)
+		key = MakeNameSafe(key, !n.options.UnsafeKeys)
 
 		valueNode := child.Nodes[1]
 		keyString := n.i.IndentValue() + key + ": "

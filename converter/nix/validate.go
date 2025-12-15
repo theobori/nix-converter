@@ -2,10 +2,6 @@ package nix
 
 import "github.com/theobori/nix-converter/internal/common"
 
-func IsSafe(c byte) bool {
-	return common.IsAlphaNumeric(c) || c == '-' || c == '_'
-}
-
 func IsNameUnsafe(s string) bool {
 	n := len(s)
 

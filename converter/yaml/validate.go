@@ -1,13 +1,21 @@
 package yaml
 
-import "github.com/theobori/nix-converter/internal/common"
+func IsCharUnsafe(c byte) bool {
+	return c == '#' || c == '&' || c == '*' || c == '>' || c == '!' || c == ','
+}
 
-func IsYAMLString(s string) bool {
-	for i := range s {
-		if !common.IsAlphaNumeric(s[i]) && s[i] != ' ' {
-			return false
+func IsStringUnsafe(s string) bool {
+	n := len(s)
+
+	if n == 0 || IsCharUnsafe(s[0]) {
+		return true
+	}
+
+	for i := 1; i < n; i++ {
+		if s[i] == '#' && s[i-1] == ' ' {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
