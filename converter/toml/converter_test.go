@@ -92,6 +92,8 @@ var nixStrings = []string{
           toys = [
             "mouse"
             "ball"
+            (-1)
+            (-2)
           ];
         }
         {

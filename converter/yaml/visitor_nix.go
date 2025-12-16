@@ -42,7 +42,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 		key = MakeNameSafe(key, n.options.UnsafeKeys)
 
 		valueNode := child.Nodes[1]
-		keyString := n.i.IndentValue() + key + ": "
+		keyString := n.i.IndentValue() + key + ":"
 
 		switch valueNode.Type {
 		case parser.SetNode, parser.ListNode:
@@ -51,7 +51,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				e = append(e, keyString+value)
+				e = append(e, keyString+" "+value)
 			} else {
 				n.i.Indent()
 				value, err := n.visit(valueNode)
@@ -67,7 +67,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			e = append(e, keyString+value)
+			e = append(e, keyString+" "+value)
 		}
 	}
 
@@ -113,6 +113,11 @@ func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 	return "-" + result, nil
 }
 
+func (n *NixVisitor) visitParens(node *parser.Node) (string, error) {
+	// Empty Nix parens are not allowed
+	return n.visit(node.Nodes[0])
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -135,6 +140,8 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return n.visitUnaryNegative(node)
 	case parser.ApplyNode:
 		return nix.VisitApply(n.p, node)
+	case parser.ParensNode:
+		return n.visitParens(node)
 	default:
 		return "", fmt.Errorf("unsupported node type: %s", node.Type.String())
 	}

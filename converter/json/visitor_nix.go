@@ -91,6 +91,11 @@ func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 	return "-" + result, nil
 }
 
+func (n *NixVisitor) visitParens(node *parser.Node) (string, error) {
+	// Empty Nix parens are not allowed
+	return n.visit(node.Nodes[0])
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -113,6 +118,8 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return n.visitUnaryNegative(node)
 	case parser.ApplyNode:
 		return nix.VisitApply(n.p, node)
+	case parser.ParensNode:
+		return n.visitParens(node)
 	default:
 		return "", fmt.Errorf("unsupported node type: %s", node.Type.String())
 	}

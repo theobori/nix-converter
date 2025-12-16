@@ -162,7 +162,11 @@ var jsonStrings = []string{
                                               "highway": 48,
                                               "combined": 50,
                                               "": 123,
-                                              "123": ""
+                                              "123": "",
+                                              "a": [
+                                                -1,
+                                                -2
+                                              ]
                                             }
                                           }
                                         }
