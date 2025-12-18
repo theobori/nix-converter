@@ -3,6 +3,7 @@ package nix
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/orivej/go-nix/nix/parser"
 )
@@ -23,22 +24,61 @@ func (n *NixVisitor) visitSet(node *parser.Node) (any, error) {
 	out := map[string]any{}
 
 	for _, child := range node.Nodes {
-		key, err := n.visit(child.Nodes[0])
-		if err != nil {
-			return map[string]any{}, err
-		}
+		// Handle nested attribute paths (e.g., package.meta.desc)
+		attrPathNode := child.Nodes[0]
+		if attrPathNode.Type == parser.AttrPathNode && len(attrPathNode.Nodes) > 1 {
+			// Build nested structure
+			value, err := n.visit(child.Nodes[1])
+			if err != nil {
+				return map[string]any{}, err
+			}
 
-		keyString, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("unable to convert attr key to string")
-		}
+			// Extract all keys in the path
+			keys := make([]string, len(attrPathNode.Nodes))
+			for i, keyNode := range attrPathNode.Nodes {
+				keyVal, err := n.visit(keyNode)
+				if err != nil {
+					return map[string]any{}, err
+				}
+				keyStr, ok := keyVal.(string)
+				if !ok {
+					return nil, fmt.Errorf("unable to convert attr key to string")
+				}
+				keys[i] = keyStr
+			}
 
-		value, err := n.visit(child.Nodes[1])
-		if err != nil {
-			return map[string]any{}, err
-		}
+			// Create nested structure
+			current := out
+			for i := 0; i < len(keys)-1; i++ {
+				if _, exists := current[keys[i]]; !exists {
+					current[keys[i]] = map[string]any{}
+				}
+				var ok bool
+				current, ok = current[keys[i]].(map[string]any)
+				if !ok {
+					return nil, fmt.Errorf("conflicting attribute path")
+				}
+			}
+			current[keys[len(keys)-1]] = value
+		} else {
+			// Single key
+			key, err := n.visit(child.Nodes[0])
+			if err != nil {
+				return map[string]any{}, err
+			}
 
-		out[keyString] = value
+			keyString, ok := key.(string)
+			if !ok {
+				return nil, fmt.Errorf("unable to convert attr key to string")
+			}
+
+			value, err := n.visit(child.Nodes[1])
+			if err != nil {
+				return map[string]any{}, err
+			}
+
+			out[keyString] = value
+		}
 	}
 
 	return out, nil
@@ -101,8 +141,14 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 		return VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return n.visitString(node)
+	case parser.IStringNode:
+		if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+			return "", nil
+		}
+		raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+		return ProcessIndentedString(raw), nil
 	case parser.IntNode:
 		return VisitIntRaw(n.p, node)
 	case parser.FloatNode:
@@ -116,6 +162,75 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported node type: %s", node.Type)
 	}
+}
+
+func ProcessIndentedString(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	// Check if this is a properly formatted indented string (starts with newline)
+	// vs a single-line literal like ''Hello\nWorld'' (no actual newlines)
+	hasActualNewlines := strings.Contains(raw, "\n")
+
+	if !hasActualNewlines {
+		// Single-line indented string with literal \n - return as-is
+		return raw
+	}
+
+	lines := strings.Split(raw, "\n")
+
+	// Remove first line if it's empty or only whitespace (common for indented strings)
+	if len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
+		lines = lines[1:]
+	}
+
+	if len(lines) == 0 {
+		return ""
+	}
+
+	// Find the minimum indentation (ignoring empty lines)
+	minIndent := -1
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if minIndent == -1 || indent < minIndent {
+			minIndent = indent
+		}
+	}
+
+	if minIndent == -1 {
+		minIndent = 0
+	}
+
+	// Strip the common indentation and process escape sequences
+	result := make([]string, len(lines))
+	for i, line := range lines {
+		// For lines that are only whitespace, make them empty
+		if strings.TrimSpace(line) == "" {
+			result[i] = ""
+			continue
+		}
+
+		// Strip common indentation
+		if len(line) >= minIndent {
+			line = line[minIndent:]
+		}
+
+		// Process Nix indented string escape sequences
+		// ''${ -> ${
+		line = strings.ReplaceAll(line, "''${", "${")
+		// ''\ -> '
+		line = strings.ReplaceAll(line, "''\\", "'")
+		// ''' -> ''
+		line = strings.ReplaceAll(line, "'''", "''")
+
+		result[i] = line
+	}
+
+	return strings.Join(result, "\n")
 }
 
 func (n *NixVisitor) Visit() (any, error) {

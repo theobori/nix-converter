@@ -32,50 +32,140 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 		return "{}", nil
 	}
 
-	e := []string{}
+	// Build nested structure from attribute paths while preserving order
+	type nodeInfo struct {
+		keys  []string
+		value *parser.Node
+	}
+	items := []nodeInfo{}
+
 	for _, child := range node.Nodes {
-		key, err := n.visit(child.Nodes[0])
-		if err != nil {
-			return "", err
-		}
-
-		key = MakeNameSafe(key, n.options.UnsafeKeys)
-
+		attrPathNode := child.Nodes[0]
 		valueNode := child.Nodes[1]
-		keyString := n.i.IndentValue() + key + ":"
 
-		switch valueNode.Type {
-		case parser.SetNode, parser.ListNode:
-			if len(valueNode.Nodes) == 0 {
-				value, err := n.visit(valueNode)
+		var keys []string
+		if attrPathNode.Type == parser.AttrPathNode && len(attrPathNode.Nodes) > 1 {
+			// Multi-level path like package.meta.desc
+			for _, keyNode := range attrPathNode.Nodes {
+				key, err := n.visit(keyNode)
 				if err != nil {
 					return "", err
 				}
-				e = append(e, keyString+" "+value)
-			} else {
-				n.i.Indent()
-				value, err := n.visit(valueNode)
-				if err != nil {
-					return "", err
-				}
-				n.i.UnIndent()
-
-				e = append(e, keyString+"\n"+value)
+				keys = append(keys, key)
 			}
-		default:
-			value, err := n.visit(valueNode)
+		} else {
+			// Single key
+			key, err := n.visit(attrPathNode)
 			if err != nil {
 				return "", err
 			}
-			e = append(e, keyString+" "+value)
+			keys = []string{key}
+		}
+
+		items = append(items, nodeInfo{keys: keys, value: valueNode})
+	}
+
+	// Build nested map structure with order preservation
+	type mapNode struct {
+		children  map[string]*mapNode
+		childKeys []string // Preserve insertion order
+		value     *parser.Node
+	}
+	root := &mapNode{children: make(map[string]*mapNode), childKeys: []string{}}
+
+	for _, item := range items {
+		current := root
+		for i, key := range item.keys {
+			if i == len(item.keys)-1 {
+				// Leaf node
+				if current.children[key] == nil {
+					current.children[key] = &mapNode{value: item.value}
+					current.childKeys = append(current.childKeys, key)
+				} else {
+					current.children[key].value = item.value
+				}
+			} else {
+				// Intermediate node
+				if current.children[key] == nil {
+					current.children[key] = &mapNode{children: make(map[string]*mapNode), childKeys: []string{}}
+					current.childKeys = append(current.childKeys, key)
+				} else if current.children[key].children == nil {
+					current.children[key].children = make(map[string]*mapNode)
+					current.children[key].childKeys = []string{}
+				}
+				current = current.children[key]
+			}
 		}
 	}
 
-	if n.options.SortIterators.SortHashmap {
-		slices.Sort(e)
+	// Convert to YAML output
+	var buildYAML func(m *mapNode) ([]string, error)
+	buildYAML = func(m *mapNode) ([]string, error) {
+		e := []string{}
+		keys := m.childKeys
+		if n.options.SortIterators.SortHashmap {
+			keys = make([]string, len(m.childKeys))
+			copy(keys, m.childKeys)
+			slices.Sort(keys)
+		}
+
+		for _, key := range keys {
+			node := m.children[key]
+			safeKey := MakeNameSafe(key, n.options.UnsafeKeys)
+			keyString := n.i.IndentValue() + safeKey + ":"
+
+			var valueNode *parser.Node
+			if node.value != nil {
+				valueNode = node.value
+			}
+
+			if valueNode != nil {
+				// Has a value node
+				switch valueNode.Type {
+				case parser.SetNode, parser.ListNode:
+					if len(valueNode.Nodes) == 0 {
+						value, err := n.visit(valueNode)
+						if err != nil {
+							return nil, err
+						}
+						e = append(e, keyString+" "+value)
+					} else {
+						n.i.Indent()
+						value, err := n.visit(valueNode)
+						if err != nil {
+							return nil, err
+						}
+						n.i.UnIndent()
+						e = append(e, keyString+"\n"+value)
+					}
+				default:
+					value, err := n.visit(valueNode)
+					if err != nil {
+						return nil, err
+					}
+					e = append(e, keyString+" "+value)
+				}
+			} else if len(node.children) > 0 {
+				// Has nested children (from expanded paths)
+				n.i.Indent()
+				nested, err := buildYAML(node)
+				if err != nil {
+					return nil, err
+				}
+				n.i.UnIndent()
+				e = append(e, keyString+"\n"+strings.Join(nested, "\n"))
+			}
+		}
+
+		return e, nil
 	}
 
-	return strings.Join(e, "\n"), nil
+	lines, err := buildYAML(root)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(lines, "\n"), nil
 }
 
 func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
@@ -118,6 +208,31 @@ func (n *NixVisitor) visitParens(node *parser.Node) (string, error) {
 	return n.visit(node.Nodes[0])
 }
 
+func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+		return "\"\"", nil
+	}
+
+	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+	processed := nix.ProcessIndentedString(raw)
+
+	// If it's a single line, just return as quoted string
+	if !strings.Contains(processed, "\n") {
+		return common.MakeStringSafe(processed), nil
+	}
+
+	// Use YAML block scalar for multiline strings
+	lines := strings.Split(strings.TrimSuffix(processed, "\n"), "\n")
+	result := "|-\n"
+	n.i.Indent()
+	for _, line := range lines {
+		result += n.i.IndentValue() + line + "\n"
+	}
+	n.i.UnIndent()
+
+	return strings.TrimSuffix(result, "\n"), nil
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -130,8 +245,10 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return nix.VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return nix.VisitString(n.p, node)
+	case parser.IStringNode:
+		return n.visitIndentedString(node)
 	case parser.IntNode:
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:

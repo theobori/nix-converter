@@ -39,3 +39,19 @@ func (i *Indentation) UnIndent() {
 func (i *Indentation) IndentValue() string {
 	return i.indentValue
 }
+
+func (i *Indentation) Level() int {
+	return i.indentAmount
+}
+
+func (i *Indentation) Size() int {
+	return i.indentSize
+}
+
+func (i *Indentation) SetLevel(level int) {
+	if level < 0 {
+		level = 0
+	}
+	i.indentAmount = level
+	i.indentValue = strings.Repeat(i.spaces, level)
+}
