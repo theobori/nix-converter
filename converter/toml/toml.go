@@ -86,7 +86,7 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	case bool:
 		return strconv.FormatBool(v), nil
 	default:
-		return "\"" + v.(string) + "\"", nil
+		return "\"" + common.EscapeNixString(v.(string)) + "\"", nil
 	}
 }
 

@@ -70,8 +70,14 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 		return VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+	case parser.IStringNode:
+		if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+			return "", nil
+		}
+		raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+		return ProcessIndentedString(raw), nil
 	case parser.IntNode:
 		return VisitInt(n.p, node)
 	case parser.FloatNode:

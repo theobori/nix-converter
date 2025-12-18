@@ -50,7 +50,12 @@ func (y *YAMLVisitor) visitScalar(node *yaml.Node) string {
 		return node.Value
 	}
 
-	return "\"" + node.Value + "\""
+	// Use indented string syntax for multiline strings
+	if common.ShouldUseIndentedString(node.Value) {
+		return common.FormatNixIndentedString(node.Value, y.i.IndentValue())
+	}
+
+	return "\"" + common.EscapeNixString(node.Value) + "\""
 }
 
 func (y *YAMLVisitor) visit(node *yaml.Node) string {

@@ -114,6 +114,34 @@ func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
 	return token, nil
 }
 
+func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+		return "\"\"", nil
+	}
+	
+	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+	processed := nix.ProcessIndentedString(raw)
+	
+	// If it's a single line, just return as quoted string
+	if !strings.Contains(processed, "\n") {
+		if !isYAMLString(processed) {
+			return "\"" + processed + "\"", nil
+		}
+		return processed, nil
+	}
+	
+	// Use YAML block scalar for multiline strings
+	lines := strings.Split(strings.TrimSuffix(processed, "\n"), "\n")
+	result := "|-\n"
+	n.i.Indent()
+	for _, line := range lines {
+		result += n.i.IndentValue() + line + "\n"
+	}
+	n.i.UnIndent()
+	
+	return strings.TrimSuffix(result, "\n"), nil
+}
+
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	switch node.Type {
 	case parser.SetNode:
@@ -126,8 +154,10 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return nix.VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return n.visitString(node)
+	case parser.IStringNode:
+		return n.visitIndentedString(node)
 	case parser.IntNode:
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:
