@@ -23,9 +23,8 @@ Multi
 line"""`,
 			want: `{
   "description" = ''
-  Multi
-  line
-'';
+    Multi
+    line'';
 }`,
 		},
 		{
@@ -38,9 +37,8 @@ text"""`,
   "package" = {
     "meta" = {
       "desc" = ''
-  Long
-  text
-'';
+        Long
+        text'';
     };
   };
 }`,
@@ -53,10 +51,9 @@ echo "Build"
 make all"""`,
 			want: `{
   "buildPhase" = ''
-  #!/bin/bash
-  echo "Build"
-  make all
-'';
+    #!/bin/bash
+    echo "Build"
+    make all'';
 }`,
 		},
 		{
@@ -77,22 +74,18 @@ H"""
 ]`,
 			want: `{
   "s1" = ''
-  A
-  B
-'';
+    A
+    B'';
   "s2" = ''
-  C
-  D
-'';
+    C
+    D'';
   "scripts" = [
     ''
-  E
-  F
-''
+      E
+      F''
     ''
-  G
-  H
-''
+      G
+      H''
   ];
 }`,
 		},
@@ -174,17 +167,17 @@ func TestTOMLNixMultilineRoundTrip(t *testing.T) {
 		{
 			name:  "multiline round trip",
 			input: `description = """Line 1\nLine 2"""`,
-			want: `description = "Line 1\nLine 2\n"
+			want: `description = "Line 1\nLine 2"
 `,
 		},
 		{
 			name: "nested multiline",
 			input: `[config]
-script = """
+script = '''
 #!/bin/bash
-echo "test"""`,
+echo "test"'''`,
 			want: `[config]
-  script = "#!/bin/bash\necho \"test\n"
+  script = "#!/bin/bash\necho \"test\""
 `,
 		},
 		{
@@ -233,10 +226,9 @@ Special: !@#$%
 Symbols: []{}"""`,
 			want: `{
   "text" = ''
-  Has "quotes"
-  Special: !@#$%
-  Symbols: []{}
-'';
+    Has "quotes"
+    Special: !@#$%
+    Symbols: []{}'';
 }`,
 		},
 		{
@@ -246,9 +238,8 @@ Unicode: 你好世界
 Emoji: 🚀"""`,
 			want: `{
   "text" = ''
-  Unicode: 你好世界
-  Emoji: 🚀
-'';
+    Unicode: 你好世界
+    Emoji: 🚀'';
 }`,
 		},
 	}

@@ -72,6 +72,16 @@ func (j *JSONVisitor) visitArray(value *fastjson.Value) string {
 }
 
 func (j *JSONVisitor) visitString(value *fastjson.Value) string {
+	b, err := value.StringBytes()
+	if err != nil {
+		return value.String()
+	}
+	s := string(b)
+
+	if strings.Contains(s, "\n") {
+		return common.MakeIndentedString(s, j.i.IndentValue())
+	}
+
 	return value.String()
 }
 

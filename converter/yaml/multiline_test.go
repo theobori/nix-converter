@@ -18,9 +18,9 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
 			input: "description: |\n  Multi\n  line\ntext: >\n  Folded\n  text",
 			want: `{
   "description" = ''
-  Multi
-  line
-'';
+    Multi
+    line
+  '';
   "text" = "Folded text";
 }`,
 		},
@@ -31,14 +31,13 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
   "package" = {
     "meta" = {
       "desc" = ''
-  Long text
-'';
+        Long text
+      '';
     };
   };
   "buildPhase" = ''
-  #!/bin/bash
-  make all
-'';
+    #!/bin/bash
+    make all'';
 }`,
 		},
 		{
@@ -46,16 +45,16 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
 			input: "s1: |\n  A\n  B\ns2: |\n  C\nscripts:\n  - |\n    First\n  - |\n    Second",
 			want: `{
   "s1" = ''
-  A
-  B
-'';
+    A
+    B
+  '';
   "s2" = ''
-  C
-'';
+    C
+  '';
   "scripts" = [
     ''
-  First
-''
+      First
+    ''
     "Second"
   ];
 }`,
@@ -65,10 +64,9 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
 			input: "config: |\n  [section]\n  key = \"value\"\n  special = !@#$%",
 			want: `{
   "config" = ''
-  [section]
-  key = "value"
-  special = !@#$%
-'';
+    [section]
+    key = "value"
+    special = !@#$%'';
 }`,
 		},
 	}

@@ -17,10 +17,14 @@ func TestJSONMultilineStringToNix(t *testing.T) {
 			name:  "simple and nested multiline",
 			input: `{"description": "Multi\nline", "package": {"meta": {"desc": "Long\ntext"}}}`,
 			want: `{
-  "description" = "Multi\nline";
+  "description" = ''
+    Multi
+    line'';
   "package" = {
     "meta" = {
-      "desc" = "Long\ntext";
+      "desc" = ''
+        Long
+        text'';
     };
   };
 }`,
@@ -29,18 +33,29 @@ func TestJSONMultilineStringToNix(t *testing.T) {
 			name:  "bash script",
 			input: `{"buildScript": "#!/bin/bash\necho \"Build\"\nmake all"}`,
 			want: `{
-  "buildScript" = "#!/bin/bash\necho \"Build\"\nmake all";
+  "buildScript" = ''
+    #!/bin/bash
+    echo "Build"
+    make all'';
 }`,
 		},
 		{
 			name:  "multiple strings and lists",
 			input: `{"s1": "A\nB", "s2": "C\nD", "items": ["E\nF", "G\nH"]}`,
 			want: `{
-  "s1" = "A\nB";
-  "s2" = "C\nD";
+  "s1" = ''
+    A
+    B'';
+  "s2" = ''
+    C
+    D'';
   "items" = [
-    "E\nF"
-    "G\nH"
+    ''
+      E
+      F''
+    ''
+      G
+      H''
   ];
 }`,
 		},
@@ -48,7 +63,12 @@ func TestJSONMultilineStringToNix(t *testing.T) {
 			name:  "escape sequences and unicode",
 			input: `{"text": "Back\\slash\nQuote\"\nTab\t\n你好\n🚀"}`,
 			want: `{
-  "text" = "Back\\slash\nQuote\"\nTab\t\n你好\n🚀";
+  "text" = ''
+    Back\slash
+    Quote"
+    Tab	
+    你好
+    🚀'';
 }`,
 		},
 	}
@@ -151,7 +171,7 @@ func TestJSONNixMultilineRoundTrip(t *testing.T) {
 			name:  "multiline round trip",
 			input: `{"description": "Line 1\nLine 2\nLine 3"}`,
 			want: `{
-  "description": "Line 1\\nLine 2\\nLine 3"
+  "description": "Line 1\nLine 2\nLine 3"
 }`,
 		},
 		{
@@ -159,7 +179,7 @@ func TestJSONNixMultilineRoundTrip(t *testing.T) {
 			input: `{"config": {"script": "#!/bin/bash\necho \"test\""}}`,
 			want: `{
   "config": {
-    "script": "#!/bin/bash\\necho \\\"test\\\""
+    "script": "#!/bin/bash\necho \"test\""
   }
 }`,
 		},

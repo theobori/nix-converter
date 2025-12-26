@@ -81,6 +81,10 @@ func (y *YAMLVisitor) visitScalar(node *yaml.Node) string {
 		return node.Value
 	}
 
+	if strings.Contains(node.Value, "\n") {
+		return common.MakeIndentedString(node.Value, y.i.IndentValue())
+	}
+
 	return common.MakeStringSafe(node.Value)
 }
 

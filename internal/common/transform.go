@@ -5,7 +5,7 @@ import "strings"
 func MakeStringSafe(s string) string {
 	// Use indented string syntax for multiline strings
 	if strings.Contains(s, "\n") {
-		return MakeIndentedString(s)
+		return MakeIndentedString(s, "")
 	}
 
 	// Escape special characters for Nix string literals
@@ -18,7 +18,7 @@ func MakeStringSafe(s string) string {
 	return "\"" + escaped + "\""
 }
 
-func MakeIndentedString(s string) string {
+func MakeIndentedString(s string, indent string) string {
 	// Escape special Nix indented string sequences
 	escaped := s
 	// Escape '' as '''
@@ -26,23 +26,30 @@ func MakeIndentedString(s string) string {
 	// Escape ${ as ''${
 	escaped = strings.ReplaceAll(escaped, "${", "''${")
 
-	// Split into lines and add indentation
-	lines := strings.Split(escaped, "\n")
+	hasTrailingNewline := strings.HasSuffix(escaped, "\n")
+	trimmed := strings.TrimSuffix(escaped, "\n")
+	lines := strings.Split(trimmed, "\n")
+
 	var result strings.Builder
 	result.WriteString("''\n")
 
+	contentIndent := indent + "  "
+
 	for i, line := range lines {
-		if i == len(lines)-1 && line == "" {
-			continue
+		if line != "" || len(lines) > 1 {
+			result.WriteString(contentIndent)
+			result.WriteString(line)
 		}
 
-		if line != "" || len(lines) > 1 {
-			result.WriteString("  ")
-			result.WriteString(line)
+		if i < len(lines)-1 || hasTrailingNewline {
 			result.WriteString("\n")
 		}
 	}
 
-	result.WriteString("''")
+	if hasTrailingNewline {
+		result.WriteString(indent + "''")
+	} else {
+		result.WriteString("''")
+	}
 	return result.String()
 }

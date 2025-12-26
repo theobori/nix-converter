@@ -110,7 +110,11 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	case bool:
 		return strconv.FormatBool(v), nil
 	default:
-		return common.MakeStringSafe(v.(string)), nil
+		s := v.(string)
+		if strings.Contains(s, "\n") {
+			return common.MakeIndentedString(s, t.i.IndentValue()), nil
+		}
+		return common.MakeStringSafe(s), nil
 	}
 }
 
