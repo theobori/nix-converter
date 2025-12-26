@@ -78,7 +78,11 @@ func TestNixMultilineStringToJSON(t *testing.T) {
 			input: `{ description = ''Multi\nline''; package.meta.desc = ''Long\ntext''; }`,
 			want: `{
   "description": "Multi\\nline",
-  "package": "Long\\ntext"
+  "package": {
+    "meta": {
+      "desc": "Long\\ntext"
+    }
+  }
 }`,
 		},
 		{
@@ -98,6 +102,27 @@ func TestNixMultilineStringToJSON(t *testing.T) {
     "First\\nitem",
     "Second\\nitem"
   ]
+}`,
+		},
+		{
+			name: "deeply indented",
+			input: `{ a.b.c = { example = ''
+			   "Several lines of text,
+         containing "double quotes" and 'single quotes'.
+				 Escapes (like \n) work.\nIn addition,
+         newlines can be esc\
+			   aped to prevent them from being converted to a space.
+         Newlines can also be added by leaving a blank line.
+         Leading whitespace on lines is ignored."
+			'';}; }`,
+			want: `{
+  "a": {
+    "b": {
+      "c": {
+        "example": " \"Several lines of text,\n    containing \"double quotes\" and 'single quotes'.\nEscapes (like \\n) work.\\nIn addition,\n    newlines can be esc\\\n aped to prevent them from being converted to a space.\n    Newlines can also be added by leaving a blank line.\n    Leading whitespace on lines is ignored.\"\n"
+      }
+    }
+  }
 }`,
 		},
 	}
