@@ -19,11 +19,8 @@ func MakeStringSafe(s string) string {
 }
 
 func MakeIndentedString(s string, indent string) string {
-	// Escape special Nix indented string sequences
 	escaped := s
-	// Escape '' as '''
 	escaped = strings.ReplaceAll(escaped, "''", "'''")
-	// Escape ${ as ''${
 	escaped = strings.ReplaceAll(escaped, "${", "''${")
 
 	hasTrailingNewline := strings.HasSuffix(escaped, "\n")

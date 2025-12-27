@@ -42,7 +42,7 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 
 	for key, value := range node {
 		t.i.Indent()
-		left := nix.MakeNameSafe(string(key), t.options.UnsafeKeys)
+		left := nix.MakeNameSafe(key, t.options.UnsafeKeys)
 		valueResult, err := t.visit(value)
 		if err != nil {
 			return "", err

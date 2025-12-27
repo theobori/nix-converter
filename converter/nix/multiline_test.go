@@ -8,6 +8,7 @@ import (
 
 // TestMultilineStringParsing tests parsing of various multi-line string formats in Nix
 func TestMultilineStringParsing(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		input    string
@@ -53,6 +54,7 @@ func TestMultilineStringParsing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			p, err := parser.ParseString(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
@@ -75,7 +77,9 @@ func TestMultilineStringParsing(t *testing.T) {
 
 // TestMultilineStringInStructures tests multi-line strings in sets and lists
 func TestMultilineStringInStructures(t *testing.T) {
+	t.Parallel()
 	t.Run("in attribute set", func(t *testing.T) {
+		t.Parallel()
 		input := `{
   script = ''
     #!/bin/bash
@@ -90,8 +94,11 @@ func TestMultilineStringInStructures(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GoValue() error = %v", err)
 		}
-		data := result.(map[string]any)
-		if script := data["script"].(string); script != "#!/bin/bash\necho \"Hello\"\n" {
+		data, ok := result.(map[string]any)
+		if !ok {
+			t.Fatalf("result is not a map[string]any")
+		}
+		if script, ok := data["script"].(string); !ok || script != "#!/bin/bash\necho \"Hello\"\n" {
 			t.Errorf("script = %q", script)
 		}
 		if config := data["config"].(string); config != "[section]\nkey = value\n" {
@@ -100,6 +107,7 @@ func TestMultilineStringInStructures(t *testing.T) {
 	})
 
 	t.Run("in nested set", func(t *testing.T) {
+		t.Parallel()
 		input := `{ package = { meta = { desc = ''Multi\nline''; }; }; }`
 		result, err := GoValue(input)
 		if err != nil {
@@ -113,6 +121,7 @@ func TestMultilineStringInStructures(t *testing.T) {
 	})
 
 	t.Run("in list", func(t *testing.T) {
+		t.Parallel()
 		input := `[ ''First\nitem'' ''Second\nitem'' ]`
 		result, err := GoValue(input)
 		if err != nil {
@@ -127,6 +136,7 @@ func TestMultilineStringInStructures(t *testing.T) {
 
 // TestMultilineStringEdgeCases tests edge cases in multi-line string handling
 func TestMultilineStringEdgeCases(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -155,6 +165,7 @@ func TestMultilineStringEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := GoValue(tt.input)
 			if err != nil {
 				t.Fatalf("GoValue() error = %v", err)

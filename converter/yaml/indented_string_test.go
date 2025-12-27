@@ -1,7 +1,6 @@
 package yaml
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/theobori/nix-converter/converter"
@@ -9,11 +8,11 @@ import (
 
 // TestMultilineToIndentedString tests that multiline YAML strings convert to Nix indented strings
 func TestMultilineToIndentedString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
-		name    string
-		input   string
-		wantErr bool
-		checks  []func(t *testing.T, result string)
+		name  string
+		input string
+		want  string
 	}{
 		{
 			name: "multiline string uses indented syntax",
@@ -21,24 +20,12 @@ func TestMultilineToIndentedString(t *testing.T) {
   Hello world
   This is a test
   Multiple lines`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use Nix indented string syntax ''")
-					}
-				},
-				func(t *testing.T, result string) {
-					if strings.Contains(result, "\\n") {
-						t.Error("Should not contain escaped newlines")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "Hello world") {
-						t.Error("Should preserve content")
-					}
-				},
-			},
+			want: `{
+  "message" = ''
+    Hello world
+    This is a test
+    Multiple lines'';
+}`,
 		},
 		{
 			name: "nested multiline string",
@@ -47,79 +34,43 @@ func TestMultilineToIndentedString(t *testing.T) {
     Line one
     Line two
     Line three`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if strings.Contains(result, "\\n") {
-						t.Error("Should not escape newlines")
-					}
-				},
-			},
+			want: `{
+  "config" = {
+    "notes" = ''
+      Line one
+      Line two
+      Line three'';
+  };
+}`,
 		},
 		{
-			name:    "single line string uses quotes",
-			input:   `name: "just one line"`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if strings.Contains(result, "''") {
-						t.Error("Single line should not use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "\"just one line\"") {
-						t.Error("Should use regular quoted string")
-					}
-				},
-			},
+			name:  "single line string uses quotes",
+			input: `name: "just one line"`,
+			want: `{
+  "name" = "just one line";
+}`,
 		},
 		{
 			name: "multiline with dollar signs",
 			input: `script: |
   echo $HOME
   export PATH=$PATH:/usr/bin`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "$HOME") {
-						t.Error("Should preserve $HOME")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "$PATH") {
-						t.Error("Should preserve $PATH")
-					}
-				},
-			},
+			want: `{
+  "script" = ''
+    echo $HOME
+    export PATH=$PATH:/usr/bin'';
+}`,
 		},
 		{
 			name: "multiline with interpolation syntax",
 			input: `script: |
   echo ${HOME}
   value=${VAR}`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''${") {
-						t.Error("Should escape ${ as ''${")
-					}
-				},
-			},
+			want: `{
+  "script" = ''
+    echo ''${HOME}
+    value=''${VAR}'';
+}`,
 		},
 		{
 			name: "multiline with empty lines",
@@ -127,57 +78,32 @@ func TestMultilineToIndentedString(t *testing.T) {
   First line
 
   Third line after blank`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "First line") {
-						t.Error("Should preserve first line")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "Third line") {
-						t.Error("Should preserve line after blank")
-					}
-				},
-			},
+			want: `{
+  "text" = ''
+    First line
+    
+    Third line after blank'';
+}`,
 		},
 		{
 			name: "multiline with special nix chars",
 			input: `code: |
   let x = ''hello'';
   echo "test"`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "'''") {
-						t.Error("Should escape '' as '''")
-					}
-				},
-			},
+			want: `{
+  "code" = ''
+    let x = '''hello''';
+    echo "test"'';
+}`,
 		},
 		{
 			name: "folded string becomes single line",
 			input: `description: >
   This is folded
   into one line`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if strings.Contains(result, "''") {
-						t.Error("Folded strings collapse to single line, should not use indented syntax")
-					}
-				},
-			},
+			want: `{
+  "description" = "This is folded into one line";
+}`,
 		},
 		{
 			name: "multiline in array",
@@ -187,19 +113,15 @@ func TestMultilineToIndentedString(t *testing.T) {
     with details
   - |
     Second item`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax for array items")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "First item") {
-						t.Error("Should preserve array item content")
-					}
-				},
-			},
+			want: `{
+  "items" = [
+    ''
+      First item
+      with details
+    ''
+    "Second item"
+  ];
+}`,
 		},
 		{
 			name: "multiline with indentation variations",
@@ -208,32 +130,27 @@ func TestMultilineToIndentedString(t *testing.T) {
     echo "nested"
       echo "more nested"
   fi`,
-			wantErr: false,
-			checks: []func(t *testing.T, result string){
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "''") {
-						t.Error("Should use indented string syntax")
-					}
-				},
-				func(t *testing.T, result string) {
-					if !strings.Contains(result, "if true") {
-						t.Error("Should preserve code structure")
-					}
-				},
-			},
+			want: `{
+  "code" = ''
+    if true; then
+      echo "nested"
+        echo "more nested"
+    fi'';
+}`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ToNix() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				t.Errorf("ToNix() error = %v, input %v", err, tt.input)
 				return
 			}
 
-			for _, check := range tt.checks {
-				check(t, result)
+			if result != tt.want {
+				t.Errorf("ToNix() = \n%v, want \n%v", result, tt.want)
 			}
 		})
 	}

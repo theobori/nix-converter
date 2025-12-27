@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/orivej/go-nix/nix/parser"
@@ -22,6 +21,12 @@ type NixVisitor struct {
 	options *converter.ConverterOptions
 }
 
+type jsonNode struct {
+	valueNode *parser.Node
+	children  map[string]*jsonNode
+	order     []string
+}
+
 func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.ConverterOptions) *NixVisitor {
 	return &NixVisitor{
 		i:       *common.NewDefaultIndentation(),
@@ -29,11 +34,6 @@ func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.Conve
 		p:       p,
 		options: options,
 	}
-}
-
-func (n *NixVisitor) makeJSONString(s string) string {
-	b, _ := json.Marshal(s)
-	return string(b)
 }
 
 func (n *NixVisitor) visitKey(node *parser.Node) (string, error) {
@@ -44,28 +44,42 @@ func (n *NixVisitor) visitKey(node *parser.Node) (string, error) {
 		if len(node.Nodes) == 0 {
 			return "", nil
 		}
-		if len(node.Nodes) > 0 && len(node.Nodes[0].Tokens) > 0 {
-			s := n.p.TokenString(node.Nodes[0].Tokens[0])
-			// Wrap in quotes to make it a valid string literal for Unquote
-			unquoted, err := strconv.Unquote("\"" + s + "\"")
+		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+	}
+	return "", fmt.Errorf("unsupported key node type: %s", node.Type.String())
+}
+
+func (n *NixVisitor) buildJSON(node *jsonNode) (string, error) {
+	var parts []string
+
+	keys := node.order
+
+	n.i.Indent()
+	for _, k := range keys {
+		child := node.children[k]
+		keyStr := n.i.IndentValue() + makeJSONString(k) + ": "
+		if child.valueNode != nil {
+			valStr, err := n.visit(child.valueNode)
 			if err != nil {
 				return "", err
 			}
-			return unquoted, nil
+			parts = append(parts, keyStr+valStr)
+		} else {
+			childStr, err := n.buildJSON(child)
+			if err != nil {
+				return "", err
+			}
+			parts = append(parts, keyStr+childStr)
 		}
 	}
-	return "", fmt.Errorf("unsupported key node type: %s", node.Type.String())
+	n.i.UnIndent()
+
+	return "{\n" + strings.Join(parts, ",\n") + "\n" + n.i.IndentValue() + "}", nil
 }
 
 func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 	if len(node.Nodes) == 0 {
 		return "{}", nil
-	}
-
-	type jsonNode struct {
-		valueNode *parser.Node
-		children  map[string]*jsonNode
-		order     []string
 	}
 
 	root := &jsonNode{children: make(map[string]*jsonNode)}
@@ -76,24 +90,12 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 		valueNode := child.Nodes[1]
 
 		var keys []string
-		if attrPathNode.Type == parser.AttrPathNode && len(attrPathNode.Nodes) > 1 {
-			for _, kNode := range attrPathNode.Nodes {
-				k, err := n.visitKey(kNode)
-				if err != nil {
-					return "", err
-				}
-				keys = append(keys, k)
-			}
-		} else {
-			targetNode := attrPathNode
-			if attrPathNode.Type == parser.AttrPathNode && len(attrPathNode.Nodes) == 1 {
-				targetNode = attrPathNode.Nodes[0]
-			}
-			k, err := n.visitKey(targetNode)
+		for _, kNode := range attrPathNode.Nodes {
+			k, err := n.visitKey(kNode)
 			if err != nil {
 				return "", err
 			}
-			keys = []string{k}
+			keys = append(keys, k)
 		}
 
 		curr := root
@@ -110,41 +112,7 @@ func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 		}
 	}
 
-	var buildJSON func(node *jsonNode) (string, error)
-	buildJSON = func(node *jsonNode) (string, error) {
-		var parts []string
-
-		keys := node.order
-		if n.options.SortIterators.SortHashmap {
-			keys = make([]string, len(node.order))
-			copy(keys, node.order)
-			slices.Sort(keys)
-		}
-
-		n.i.Indent()
-		for _, k := range keys {
-			child := node.children[k]
-			keyStr := n.i.IndentValue() + n.makeJSONString(k) + ": "
-			if child.valueNode != nil {
-				valStr, err := n.visit(child.valueNode)
-				if err != nil {
-					return "", err
-				}
-				parts = append(parts, keyStr+valStr)
-			} else {
-				childStr, err := buildJSON(child)
-				if err != nil {
-					return "", err
-				}
-				parts = append(parts, keyStr+childStr)
-			}
-		}
-		n.i.UnIndent()
-
-		return "{\n" + strings.Join(parts, ",\n") + "\n" + n.i.IndentValue() + "}", nil
-	}
-
-	return buildJSON(root)
+	return n.buildJSON(root)
 }
 
 func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
@@ -174,7 +142,7 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 	result, err := n.visit(node.Nodes[0])
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return "-" + result, nil
@@ -191,24 +159,7 @@ func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
 	}
 	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
 	processed := nix.ProcessIndentedString(raw)
-	return n.makeJSONString(processed), nil
-}
-
-func (n *NixVisitor) visitString(node *parser.Node) (string, error) {
-	if len(node.Nodes) == 0 {
-		return "\"\"", nil
-	}
-	// Token is the raw content of the string (no quotes)
-	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
-	// Wrap in quotes to make it a valid string literal for Unquote
-	unquoted, err := strconv.Unquote("\"" + raw + "\"")
-	if err != nil {
-		return "", err
-	}
-	// Re-escape newlines to match IStringNode behavior and test expectation
-	unquoted = strings.ReplaceAll(unquoted, "\n", "\\n")
-	unquoted = strings.ReplaceAll(unquoted, "\"", "\\\"")
-	return n.makeJSONString(unquoted), nil
+	return makeJSONString(processed), nil
 }
 
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
@@ -224,7 +175,7 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
 	case parser.StringNode:
-		return n.visitString(node)
+		return nix.VisitString(n.p, node)
 	case parser.IStringNode:
 		return n.visitIndentedString(node)
 	case parser.IntNode:
@@ -258,4 +209,9 @@ func FromNix(data string, options *converter.ConverterOptions) (string, error) {
 	}
 
 	return out, nil
+}
+
+func makeJSONString(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }

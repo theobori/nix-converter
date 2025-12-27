@@ -26,59 +26,38 @@ func (n *NixVisitor) visitSet(node *parser.Node) (any, error) {
 	for _, child := range node.Nodes {
 		// Handle nested attribute paths (e.g., package.meta.desc)
 		attrPathNode := child.Nodes[0]
-		if attrPathNode.Type == parser.AttrPathNode && len(attrPathNode.Nodes) > 1 {
-			// Build nested structure
-			value, err := n.visit(child.Nodes[1])
+		value, err := n.visit(child.Nodes[1])
+		if err != nil {
+			return map[string]any{}, err
+		}
+
+		// Extract all keys in the path
+		keys := make([]string, len(attrPathNode.Nodes))
+		for i, keyNode := range attrPathNode.Nodes {
+			keyVal, err := n.visit(keyNode)
 			if err != nil {
 				return map[string]any{}, err
 			}
-
-			// Extract all keys in the path
-			keys := make([]string, len(attrPathNode.Nodes))
-			for i, keyNode := range attrPathNode.Nodes {
-				keyVal, err := n.visit(keyNode)
-				if err != nil {
-					return map[string]any{}, err
-				}
-				keyStr, ok := keyVal.(string)
-				if !ok {
-					return nil, fmt.Errorf("unable to convert attr key to string")
-				}
-				keys[i] = keyStr
-			}
-
-			// Create nested structure
-			current := out
-			for i := 0; i < len(keys)-1; i++ {
-				if _, exists := current[keys[i]]; !exists {
-					current[keys[i]] = map[string]any{}
-				}
-				var ok bool
-				current, ok = current[keys[i]].(map[string]any)
-				if !ok {
-					return nil, fmt.Errorf("conflicting attribute path")
-				}
-			}
-			current[keys[len(keys)-1]] = value
-		} else {
-			// Single key
-			key, err := n.visit(child.Nodes[0])
-			if err != nil {
-				return map[string]any{}, err
-			}
-
-			keyString, ok := key.(string)
+			keyStr, ok := keyVal.(string)
 			if !ok {
 				return nil, fmt.Errorf("unable to convert attr key to string")
 			}
-
-			value, err := n.visit(child.Nodes[1])
-			if err != nil {
-				return map[string]any{}, err
-			}
-
-			out[keyString] = value
+			keys[i] = keyStr
 		}
+
+		// Create nested structure
+		current := out
+		for i := 0; i < len(keys)-1; i++ {
+			if _, exists := current[keys[i]]; !exists {
+				current[keys[i]] = map[string]any{}
+			}
+			var ok bool
+			current, ok = current[keys[i]].(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("conflicting attribute path")
+			}
+		}
+		current[keys[len(keys)-1]] = value
 	}
 
 	return out, nil
@@ -102,7 +81,7 @@ func (n *NixVisitor) visitList(node *parser.Node) (any, error) {
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (any, error) {
 	result, err := n.visit(node.Nodes[0])
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	t := reflect.TypeOf(result)
@@ -165,31 +144,16 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 }
 
 func ProcessIndentedString(raw string) string {
-	if raw == "" {
-		return ""
-	}
-
-	// Check if this is a properly formatted indented string (starts with newline)
-	// vs a single-line literal like ''Hello\nWorld'' (no actual newlines)
-	hasActualNewlines := strings.Contains(raw, "\n")
-
-	if !hasActualNewlines {
-		// Single-line indented string with literal \n - return as-is
+	if !strings.Contains(raw, "\n") {
 		return raw
 	}
 
 	lines := strings.Split(raw, "\n")
 
-	// Remove first line if it's empty or only whitespace (common for indented strings)
 	if len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
 		lines = lines[1:]
 	}
 
-	if len(lines) == 0 {
-		return ""
-	}
-
-	// Find the minimum indentation (ignoring empty lines)
 	minIndent := -1
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
@@ -205,28 +169,20 @@ func ProcessIndentedString(raw string) string {
 		minIndent = 0
 	}
 
-	// Strip the common indentation and process escape sequences
 	result := make([]string, len(lines))
 	for i, line := range lines {
-		// For lines that are only whitespace, make them empty
 		if strings.TrimSpace(line) == "" {
 			result[i] = ""
 			continue
 		}
 
-		// Strip common indentation
 		if len(line) >= minIndent {
 			line = line[minIndent:]
 		}
 
-		// Process Nix indented string escape sequences
-		// ''${ -> ${
+		// Handle escapes
 		line = strings.ReplaceAll(line, "''${", "${")
-		// ''\ -> '
 		line = strings.ReplaceAll(line, "''\\", "'")
-		// ''' -> ''
-		line = strings.ReplaceAll(line, "'''", "''")
-
 		result[i] = line
 	}
 

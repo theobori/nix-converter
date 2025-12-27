@@ -204,10 +204,12 @@ var nixStrings = []string{
 }
 
 func TestYAMLToNix(t *testing.T) {
+	t.Parallel()
 	common.TestHelperToNixStrings(t, yamlStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }
 
 func TestYAMLFromNix(t *testing.T) {
+	t.Parallel()
 	options := converter.ConverterOptions{
 		SortIterators: *options.NewDefaultSortIterators(),
 		UnsafeKeys:    true,

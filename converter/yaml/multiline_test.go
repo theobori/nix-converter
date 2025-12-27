@@ -8,6 +8,7 @@ import (
 
 // TestYAMLMultilineStringToNix tests conversion of YAML with multi-line strings to Nix
 func TestYAMLMultilineStringToNix(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -73,6 +74,7 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)
@@ -86,6 +88,7 @@ func TestYAMLMultilineStringToNix(t *testing.T) {
 
 // TestNixMultilineStringToYAML tests conversion of Nix with multi-line strings to YAML
 func TestNixMultilineStringToYAML(t *testing.T) {
+	t.Parallel()
 	options := converter.ConverterOptions{
 		SortIterators: converter.NewDefaultConverterOptions().SortIterators,
 		UnsafeKeys:    true,
@@ -120,6 +123,7 @@ func TestNixMultilineStringToYAML(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := FromNix(tt.input, &options)
 			if err != nil {
 				t.Fatalf("FromNix() error = %v", err)
@@ -133,6 +137,7 @@ func TestNixMultilineStringToYAML(t *testing.T) {
 
 // TestYAMLNixMultilineRoundTrip tests that multi-line strings survive round-trip conversion
 func TestYAMLNixMultilineRoundTrip(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -152,6 +157,7 @@ func TestYAMLNixMultilineRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			nixResult, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)

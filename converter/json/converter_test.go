@@ -253,10 +253,12 @@ var nixStrings = []string{
 }
 
 func TestJSONToNix(t *testing.T) {
+	t.Parallel()
 	common.TestHelperToNixStrings(t, jsonStrings, FromNix, ToNix, converter.NewDefaultConverterOptions())
 }
 
 func TestJSONFromNix(t *testing.T) {
+	t.Parallel()
 	options := converter.ConverterOptions{
 		SortIterators: *options.NewDefaultSortIterators(),
 		UnsafeKeys:    true,

@@ -8,6 +8,7 @@ import (
 
 // TestJSONMultilineStringToNix tests conversion of JSON with multi-line strings to Nix
 func TestJSONMultilineStringToNix(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -75,6 +76,7 @@ func TestJSONMultilineStringToNix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)
@@ -88,6 +90,7 @@ func TestJSONMultilineStringToNix(t *testing.T) {
 
 // TestNixMultilineStringToJSON tests conversion of Nix with multi-line strings to JSON
 func TestNixMultilineStringToJSON(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -149,6 +152,7 @@ func TestNixMultilineStringToJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := FromNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("FromNix() error = %v", err)
@@ -162,6 +166,7 @@ func TestNixMultilineStringToJSON(t *testing.T) {
 
 // TestJSONNixMultilineRoundTrip tests that multi-line strings survive round-trip conversion
 func TestJSONNixMultilineRoundTrip(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -194,6 +199,7 @@ func TestJSONNixMultilineRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			nixResult, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)

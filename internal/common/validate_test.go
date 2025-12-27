@@ -20,6 +20,7 @@ var numbersKo = []string{
 }
 
 func TestIsNumber(t *testing.T) {
+	t.Parallel()
 	for _, numberOk := range numbersOk {
 		if !IsNumber(numberOk) {
 			t.Fatalf("the string '%s' is a number", numberOk)
@@ -28,6 +29,7 @@ func TestIsNumber(t *testing.T) {
 }
 
 func TestIsNotNumber(t *testing.T) {
+	t.Parallel()
 	for _, numberKo := range numbersKo {
 		if IsNumber(numberKo) {
 			t.Fatalf("the string '%s' is not a number", numberKo)

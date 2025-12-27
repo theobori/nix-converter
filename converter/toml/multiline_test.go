@@ -8,6 +8,7 @@ import (
 
 // TestTOMLMultilineStringToNix tests conversion of TOML with multi-line strings to Nix
 func TestTOMLMultilineStringToNix(t *testing.T) {
+	t.Parallel()
 	options := converter.NewDefaultConverterOptions()
 	options.SortIterators.SortHashmap = true
 
@@ -100,6 +101,7 @@ H"""
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := ToNix(tt.input, options)
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)
@@ -113,6 +115,7 @@ H"""
 
 // TestNixMultilineStringToTOML tests conversion of Nix with multi-line strings to TOML
 func TestNixMultilineStringToTOML(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -146,6 +149,7 @@ s2 = "C\\nD"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := FromNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("FromNix() error = %v", err)
@@ -159,6 +163,7 @@ s2 = "C\\nD"
 
 // TestTOMLNixMultilineRoundTrip tests that multi-line strings survive round-trip conversion
 func TestTOMLNixMultilineRoundTrip(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -190,6 +195,7 @@ echo "test"'''`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			nixResult, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)
@@ -213,6 +219,7 @@ echo "test"'''`,
 
 // TestTOMLMultilineStringEdgeCases tests edge cases in TOML multi-line string handling
 func TestTOMLMultilineStringEdgeCases(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -246,6 +253,7 @@ Emoji: 🚀"""`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := ToNix(tt.input, converter.NewDefaultConverterOptions())
 			if err != nil {
 				t.Fatalf("ToNix() error = %v", err)
