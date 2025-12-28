@@ -133,7 +133,7 @@ func (y *YAMLVisitor) Visit() string {
 	for k, v := range y.anchors {
 		secondPass += y.i.IndentValue() + k + " = " + v + ";\n"
 	}
-	secondPass += "in " + firstPass
+	secondPass += "in\n" + firstPass
 
 	return secondPass
 }

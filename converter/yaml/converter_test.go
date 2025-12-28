@@ -217,3 +217,82 @@ func TestYAMLFromNix(t *testing.T) {
 
 	common.TestHelperFromNixStrings(t, nixStrings, FromNix, ToNix, &options)
 }
+
+func TestYAMLAnchor(t *testing.T) {
+	t.Parallel()
+	options := converter.ConverterOptions{
+		SortIterators: *options.NewDefaultSortIterators(),
+		UnsafeKeys:    true,
+	}
+
+	input := `definitions:
+  steps:
+    - step: &build-test
+        c: Build and test
+        b:
+          - mvn3 package
+          - mvn2 package
+          - mvn package
+        a:
+          - -1
+          - 1
+pipelines:
+  branches:
+    v: -1.123
+    a: 0.01
+    b: -0.01
+    main:
+      - step: *build-test
+    "": 123
+    1234: ""
+    empty-list: []
+    empty-attrs: {}`
+
+	want := `let
+  build-test = {
+    c = "Build and test";
+    b = [
+      "mvn3 package"
+      "mvn2 package"
+      "mvn package"
+    ];
+    a = [
+      (-1)
+      1
+    ];
+  };
+in
+{
+  definitions = {
+    steps = [
+      {
+        step = build-test;
+      }
+    ];
+  };
+  pipelines = {
+    branches = {
+      v = -1.123;
+      a = 0.01;
+      b = -0.01;
+      main = [
+        {
+          step = build-test;
+        }
+      ];
+      "" = 123;
+      "1234" = "";
+      empty-list = [];
+      empty-attrs = {};
+    };
+  };
+}`
+	output, err := ToNix(input, &options)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if output != want {
+		t.Errorf("ToNix() = \n%v, want \n%v", output, want)
+	}
+}
