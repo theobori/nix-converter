@@ -1,6 +1,7 @@
 package json
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -20,6 +21,12 @@ type NixVisitor struct {
 	options *converter.ConverterOptions
 }
 
+type jsonNode struct {
+	valueNode *parser.Node
+	children  map[string]*jsonNode
+	order     []string
+}
+
 func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.ConverterOptions) *NixVisitor {
 	return &NixVisitor{
 		i:       *common.NewDefaultIndentation(),
@@ -29,33 +36,83 @@ func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.Conve
 	}
 }
 
+func (n *NixVisitor) visitKey(node *parser.Node) (string, error) {
+	if node.Type == parser.IDNode {
+		return n.p.TokenString(node.Tokens[0]), nil
+	}
+	if node.Type == parser.StringNode {
+		if len(node.Nodes) == 0 {
+			return "", nil
+		}
+		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+	}
+	return "", fmt.Errorf("unsupported key node type: %s", node.Type.String())
+}
+
+func (n *NixVisitor) buildJSON(node *jsonNode) (string, error) {
+	var parts []string
+
+	keys := node.order
+
+	n.i.Indent()
+	for _, k := range keys {
+		child := node.children[k]
+		keyStr := n.i.IndentValue() + makeJSONString(k) + ": "
+		if child.valueNode != nil {
+			valStr, err := n.visit(child.valueNode)
+			if err != nil {
+				return "", err
+			}
+			parts = append(parts, keyStr+valStr)
+		} else {
+			childStr, err := n.buildJSON(child)
+			if err != nil {
+				return "", err
+			}
+			parts = append(parts, keyStr+childStr)
+		}
+	}
+	n.i.UnIndent()
+
+	return "{\n" + strings.Join(parts, ",\n") + "\n" + n.i.IndentValue() + "}", nil
+}
+
 func (n *NixVisitor) visitSet(node *parser.Node) (string, error) {
 	if len(node.Nodes) == 0 {
 		return "{}", nil
 	}
 
-	e := []string{}
+	root := &jsonNode{children: make(map[string]*jsonNode)}
+
 	for _, child := range node.Nodes {
-		n.i.Indent()
-		key, err := n.visit(child.Nodes[0])
-		if err != nil {
-			return "", err
+
+		attrPathNode := child.Nodes[0]
+		valueNode := child.Nodes[1]
+
+		var keys []string
+		for _, kNode := range attrPathNode.Nodes {
+			k, err := n.visitKey(kNode)
+			if err != nil {
+				return "", err
+			}
+			keys = append(keys, k)
 		}
 
-		value, err := n.visit(child.Nodes[1])
-		if err != nil {
-			return "", err
+		curr := root
+		for i, k := range keys {
+			if curr.children[k] == nil {
+				curr.children[k] = &jsonNode{children: make(map[string]*jsonNode)}
+				curr.order = append(curr.order, k)
+			}
+			if i == len(keys)-1 {
+				curr.children[k].valueNode = valueNode
+			} else {
+				curr = curr.children[k]
+			}
 		}
-
-		e = append(e, n.i.IndentValue()+common.MakeStringSafe(key)+": "+value)
-		n.i.UnIndent()
 	}
 
-	if n.options.SortIterators.SortHashmap {
-		slices.Sort(e)
-	}
-
-	return "{\n" + strings.Join(e, ",\n") + "\n" + n.i.IndentValue() + "}", nil
+	return n.buildJSON(root)
 }
 
 func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
@@ -85,7 +142,7 @@ func (n *NixVisitor) visitList(node *parser.Node) (string, error) {
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 	result, err := n.visit(node.Nodes[0])
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return "-" + result, nil
@@ -94,6 +151,15 @@ func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (string, error) {
 func (n *NixVisitor) visitParens(node *parser.Node) (string, error) {
 	// Empty Nix parens are not allowed
 	return n.visit(node.Nodes[0])
+}
+
+func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+		return "\"\"", nil
+	}
+	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+	processed := nix.ProcessIndentedString(raw)
+	return makeJSONString(processed), nil
 }
 
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
@@ -108,8 +174,10 @@ func (n *NixVisitor) visit(node *parser.Node) (string, error) {
 		return nix.VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return nix.VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return nix.VisitString(n.p, node)
+	case parser.IStringNode:
+		return n.visitIndentedString(node)
 	case parser.IntNode:
 		return nix.VisitInt(n.p, node)
 	case parser.FloatNode:
@@ -141,4 +209,9 @@ func FromNix(data string, options *converter.ConverterOptions) (string, error) {
 	}
 
 	return out, nil
+}
+
+func makeJSONString(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }

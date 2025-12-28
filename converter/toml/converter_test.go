@@ -142,6 +142,7 @@ var nixStrings = []string{
 
 // Not comparing anything because its using Go maps (unordered)
 func TestTOMLToNix(t *testing.T) {
+	t.Parallel()
 	options := converter.ConverterOptions{
 		SortIterators: options.SortIterators{
 			SortList:    true,
@@ -159,6 +160,7 @@ func TestTOMLToNix(t *testing.T) {
 
 // Not comparing anything because its using Go maps (unordered)
 func TestTOMLFromNix(t *testing.T) {
+	t.Parallel()
 	for _, nixString := range nixStrings {
 		_, err := FromNix(nixString, converter.NewDefaultConverterOptions())
 		if err != nil {

@@ -20,8 +20,10 @@ type TOMLVisitor struct {
 	options *converter.ConverterOptions
 }
 
-const MaxNixNumber = 9223372036854775807 // 64 bits signed - 1
-const MinNixNumber = -9223372036854775807
+const (
+	MaxNixNumber = 9223372036854775807 // 64 bits signed - 1
+	MinNixNumber = -9223372036854775807
+)
 
 func NewTOMLVisitor(node any, options *converter.ConverterOptions) *TOMLVisitor {
 	return &TOMLVisitor{
@@ -40,7 +42,7 @@ func (t *TOMLVisitor) visitMap(node map[string]any) (string, error) {
 
 	for key, value := range node {
 		t.i.Indent()
-		left := nix.MakeNameSafe(string(key), t.options.UnsafeKeys)
+		left := nix.MakeNameSafe(key, t.options.UnsafeKeys)
 		valueResult, err := t.visit(value)
 		if err != nil {
 			return "", err
@@ -108,7 +110,11 @@ func (t *TOMLVisitor) visit(node any) (string, error) {
 	case bool:
 		return strconv.FormatBool(v), nil
 	default:
-		return common.MakeStringSafe(v.(string)), nil
+		s := v.(string)
+		if strings.Contains(s, "\n") {
+			return common.MakeIndentedString(s, t.i.IndentValue()), nil
+		}
+		return common.MakeStringSafe(s), nil
 	}
 }
 

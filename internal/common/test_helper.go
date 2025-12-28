@@ -16,19 +16,21 @@ func TestHelperFromNix(
 	options *converter.ConverterOptions,
 ) {
 	// Convert to data
-	nixString, err := fromNix(s, options)
+	dataString, err := fromNix(s, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Convert back to Nix
-	dataString, err := toNix(nixString, options)
+	nixString, err := toNix(dataString, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if dataString != s {
-		t.Fatal("not matching the original Nix string")
+	// For exact match (preserves formatting)
+	if nixString != s {
+		t.Fatalf("not matching after round-trip:\nOriginal Nix: %s\nData: %s\nBack to Nix: %s",
+			s, dataString, nixString)
 	}
 }
 
@@ -51,20 +53,19 @@ func TestHelperToNix(
 	toNix ConvertFn,
 	options *converter.ConverterOptions,
 ) {
-	// Convert to Nix
 	nixString, err := toNix(s, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Convert back to data
 	dataString, err := fromNix(nixString, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if dataString != s {
-		t.Fatal("not matching the original data string")
+		t.Fatalf("not matching after round-trip:\nOriginal data: %s\nNix: %s\nBack to data: %s",
+			s, nixString, dataString)
 	}
 }
 

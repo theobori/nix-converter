@@ -3,6 +3,7 @@ package nix
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/orivej/go-nix/nix/parser"
 )
@@ -23,22 +24,40 @@ func (n *NixVisitor) visitSet(node *parser.Node) (any, error) {
 	out := map[string]any{}
 
 	for _, child := range node.Nodes {
-		key, err := n.visit(child.Nodes[0])
-		if err != nil {
-			return map[string]any{}, err
-		}
-
-		keyString, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("unable to convert attr key to string")
-		}
-
+		// Handle nested attribute paths (e.g., package.meta.desc)
+		attrPathNode := child.Nodes[0]
 		value, err := n.visit(child.Nodes[1])
 		if err != nil {
 			return map[string]any{}, err
 		}
 
-		out[keyString] = value
+		// Extract all keys in the path
+		keys := make([]string, len(attrPathNode.Nodes))
+		for i, keyNode := range attrPathNode.Nodes {
+			keyVal, err := n.visit(keyNode)
+			if err != nil {
+				return map[string]any{}, err
+			}
+			keyStr, ok := keyVal.(string)
+			if !ok {
+				return nil, fmt.Errorf("unable to convert attr key to string")
+			}
+			keys[i] = keyStr
+		}
+
+		// Create nested structure
+		current := out
+		for i := 0; i < len(keys)-1; i++ {
+			if _, exists := current[keys[i]]; !exists {
+				current[keys[i]] = map[string]any{}
+			}
+			var ok bool
+			current, ok = current[keys[i]].(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("conflicting attribute path")
+			}
+		}
+		current[keys[len(keys)-1]] = value
 	}
 
 	return out, nil
@@ -62,7 +81,7 @@ func (n *NixVisitor) visitList(node *parser.Node) (any, error) {
 func (n *NixVisitor) visitUnaryNegative(node *parser.Node) (any, error) {
 	result, err := n.visit(node.Nodes[0])
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	t := reflect.TypeOf(result)
@@ -101,8 +120,14 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 		return VisitAttrPathNode(n.p, node)
 	case parser.IDNode:
 		return VisitID(n.p, node)
-	case parser.StringNode, parser.IStringNode:
+	case parser.StringNode:
 		return n.visitString(node)
+	case parser.IStringNode:
+		if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+			return "", nil
+		}
+		raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+		return ProcessIndentedString(raw), nil
 	case parser.IntNode:
 		return VisitIntRaw(n.p, node)
 	case parser.FloatNode:
@@ -116,6 +141,52 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported node type: %s", node.Type)
 	}
+}
+
+func ProcessIndentedString(raw string) string {
+	if !strings.Contains(raw, "\n") {
+		return raw
+	}
+
+	lines := strings.Split(raw, "\n")
+
+	if len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
+		lines = lines[1:]
+	}
+
+	minIndent := -1
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if minIndent == -1 || indent < minIndent {
+			minIndent = indent
+		}
+	}
+
+	if minIndent == -1 {
+		minIndent = 0
+	}
+
+	result := make([]string, len(lines))
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			result[i] = ""
+			continue
+		}
+
+		if len(line) >= minIndent {
+			line = line[minIndent:]
+		}
+
+		// Handle escapes
+		line = strings.ReplaceAll(line, "''${", "${")
+		line = strings.ReplaceAll(line, "''\\", "'")
+		result[i] = line
+	}
+
+	return strings.Join(result, "\n")
 }
 
 func (n *NixVisitor) Visit() (any, error) {
