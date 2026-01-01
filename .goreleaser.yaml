@@ -1,0 +1,30 @@
+project_name: nix-converter
+builds:
+  - env: [CGO_ENABLED=0]
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+nfpms:
+- maintainer: Théo Bori <theobori@disroot.org>
+  description: All-in-one converter from data format (JSON, YAML, etc.) to Nix and vice versa.
+  homepage: https://github.com/theobori/nix-converter
+  license: MIT
+  formats:
+  - deb
+  - rpm
+  - apk
+signs:
+  - artifacts: checksum
+    cmd: gpg2
+    args:
+      - "--batch"
+      - "-u"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
