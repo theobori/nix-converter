@@ -37,16 +37,17 @@ func NewNixVisitor(p *parser.Parser, node *parser.Node, options *converter.Conve
 }
 
 func (n *NixVisitor) visitKey(node *parser.Node) (string, error) {
-	if node.Type == parser.IDNode {
-		return n.p.TokenString(node.Tokens[0]), nil
-	}
-	if node.Type == parser.StringNode {
+	switch node.Type {
+	case parser.IDNode:
+		return nix.VisitID(n.p, node)
+	case parser.StringNode:
 		if len(node.Nodes) == 0 {
 			return "", nil
 		}
 		return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
+	default:
+		return "", fmt.Errorf("unsupported key node type: %s", node.Type.String())
 	}
-	return "", fmt.Errorf("unsupported key node type: %s", node.Type.String())
 }
 
 func (n *NixVisitor) buildJSON(node *jsonNode) (string, error) {
