@@ -103,6 +103,14 @@ func (n *NixVisitor) visitString(node *parser.Node) (any, error) {
 	return n.p.TokenString(node.Nodes[0].Tokens[0]), nil
 }
 
+func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
+	if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
+		return "", nil
+	}
+	raw := n.p.TokenString(node.Nodes[0].Tokens[0])
+	return ProcessIndentedString(raw), nil
+}
+
 func (n *NixVisitor) visitParens(node *parser.Node) (any, error) {
 	// Empty Nix parens are not allowed
 	return n.visit(node.Nodes[0])
@@ -123,11 +131,7 @@ func (n *NixVisitor) visit(node *parser.Node) (any, error) {
 	case parser.StringNode:
 		return n.visitString(node)
 	case parser.IStringNode:
-		if len(node.Nodes) == 0 || len(node.Nodes[0].Tokens) == 0 {
-			return "", nil
-		}
-		raw := n.p.TokenString(node.Nodes[0].Tokens[0])
-		return ProcessIndentedString(raw), nil
+		return n.visitIndentedString(node)
 	case parser.IntNode:
 		return VisitIntRaw(n.p, node)
 	case parser.FloatNode:

@@ -219,14 +219,15 @@ func (n *NixVisitor) visitIndentedString(node *parser.Node) (string, error) {
 
 	// Use YAML block scalar for multiline strings
 	lines := strings.Split(strings.TrimSuffix(processed, "\n"), "\n")
-	result := "|-\n"
+	var result strings.Builder
+	result.WriteString("|-\n")
 	n.i.Indent()
 	for _, line := range lines {
-		result += n.i.IndentValue() + line + "\n"
+		result.WriteString(n.i.IndentValue() + line + "\n")
 	}
 	n.i.UnIndent()
 
-	return strings.TrimSuffix(result, "\n"), nil
+	return strings.TrimSuffix(result.String(), "\n"), nil
 }
 
 func (n *NixVisitor) visit(node *parser.Node) (string, error) {
