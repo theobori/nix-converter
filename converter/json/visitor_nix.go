@@ -75,6 +75,10 @@ func (n *NixVisitor) buildJSON(node *jsonNode) (string, error) {
 	}
 	n.i.UnIndent()
 
+	if n.options.SortIterators.SortHashmap {
+		slices.Sort(parts)
+	}
+
 	return "{\n" + strings.Join(parts, ",\n") + "\n" + n.i.IndentValue() + "}", nil
 }
 

@@ -85,7 +85,7 @@ func (t *TOMLVisitor) visitArray(node []any) (string, error) {
 
 func (t *TOMLVisitor) visit(node any) (string, error) {
 	switch v := node.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return t.visitMap(v)
 	case []any:
 		return t.visitArray(v)

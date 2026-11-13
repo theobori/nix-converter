@@ -9,3 +9,8 @@ require (
 	github.com/valyala/fastjson v1.6.4
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require (
+	github.com/clbanning/mxj/v2 v2.7.0
+	github.com/google/go-cmp v0.7.0 // indirect
+)

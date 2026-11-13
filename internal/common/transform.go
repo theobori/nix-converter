@@ -44,7 +44,8 @@ func MakeIndentedString(s string, indent string) string {
 	}
 
 	if hasTrailingNewline {
-		result.WriteString(indent + "''")
+		result.WriteString(indent)
+		result.WriteString("''")
 	} else {
 		result.WriteString("''")
 	}

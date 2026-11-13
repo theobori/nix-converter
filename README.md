@@ -1,17 +1,17 @@
 # Nix data format converter
-
 [![build](https://github.com/theobori/nix-converter/actions/workflows/build.yml/badge.svg)](https://github.com/theobori/nix-converter/actions/workflows/build.yml)
 
 [![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 This GitHub repository is a toy project in the form of a CLI tool. It allows you to convert a data format, such as JSON, into Nix, and vice versa.
 
-The project is based on various projects that provide a parser. Here are the references.
+The project is based on various projects that provide a parser and/or marshaller. Here are the references.
 - [go-nix](https://github.com/orivej/go-nix) for parsing the Nix language.
 - [fastjson](https://github.com/valyala/fastjson) for parsing the JSON language.
 - [yaml.v3](https://gopkg.in/yaml.v3) for parsing the YAML language.
 - [pelletier/go-toml](https://github.com/pelletier/go-toml) for parsing the TOML language.
 - [BurntSushi/toml](https://github.com/BurntSushi/toml) providing a TOML marshaller.
+- [mxj](https://github.com/clbanning/mxj) for parsing the XML language.
 
 AST traversal for the Nix language remains static; Nix expressions are not evaluated.
 
@@ -24,6 +24,7 @@ The following languages are supported.
 | **JSON** | Yes | Yes |
 | **YAML** | Yes | Yes |
 | **TOML** | Yes (unstable output) | Yes |
+| **XML** | Yes | Yes |
 
 The YAML evaluation support anchors. They are handled during the YAML to Nix conversion.
 

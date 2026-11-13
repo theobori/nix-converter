@@ -12,6 +12,7 @@ import (
 	"github.com/theobori/nix-converter/converter/json"
 	"github.com/theobori/nix-converter/converter/options"
 	"github.com/theobori/nix-converter/converter/toml"
+	"github.com/theobori/nix-converter/converter/xml"
 	"github.com/theobori/nix-converter/converter/yaml"
 )
 
@@ -25,6 +26,8 @@ func ConverterFromLanguage(language string, data string, options *converter.Conv
 		c = yaml.NewYAMLConverter(data, options)
 	case "toml":
 		c = toml.NewTOMLConverter(data, options)
+	case "xml":
+		c = xml.NewXMLConverter(data, options)
 	default:
 		return nil, fmt.Errorf("this configuration language is not implemented")
 	}
@@ -44,7 +47,6 @@ func main() {
 
 	flag.StringVar(&language, "language", "json", "Configuration language name")
 	flag.StringVar(&language, "l", "json", "Configuration language name (shorthand)")
-	language = strings.ToLower(language)
 
 	flag.StringVar(&filename, "filename", "", "Read input from a file")
 	flag.StringVar(&filename, "f", "", "Read input from a file (shorthand)")
@@ -83,6 +85,7 @@ func main() {
 
 	data := string(bytes)
 
+	language = strings.ToLower(language)
 	c, err := ConverterFromLanguage(language, data, &converterOptions)
 	if err != nil {
 		log.Fatalln(err)
